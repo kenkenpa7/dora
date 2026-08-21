@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚔️ 戦闘曲 (battle.mp3) 正確な音程による再現テスト</title>
+    <title>🔬 純粋データ駆動・周波数直結再生テスト (battle.mp3)</title>
     <style>
         :root {
             --bg-color: #080c14;
@@ -88,6 +88,18 @@
         }
         canvas { width: 100%; height: 100%; }
 
+        .data-viewer {
+            background: #090d15;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--cyan);
+            display: flex;
+            justify-content: space-between;
+        }
+
         .note-box {
             font-size: 0.85rem;
             background: rgba(0, 210, 211, 0.08);
@@ -101,48 +113,55 @@
 <body>
     <div class="container">
         <header>
-            <h1>⚔️ 戦闘曲 (battle.mp3) 音程データ解析による再現テスト</h1>
-            <div class="subtitle">元データのクロマグラム解析（G minor / ト短調）に基づく正確なメロディ・ベース音程での演奏</div>
+            <h1>🔬 純粋データ駆動・周波数直結再生テスト</h1>
+            <div class="subtitle">AIの知識・楽譜解釈を一切排除し、Pythonで抽出した生の周波数（Hz）JSONを直結演奏</div>
         </header>
 
         <div class="compare-grid">
-            <!-- 1. 正確な音程によるプログラム合成 -->
+            <!-- 1. 純粋データ駆動 Web Audio -->
             <div class="card synth">
                 <div class="card-header">
-                    <span class="card-title" style="color: var(--cyan);">🤖 A. プログラム合成 (データ解析音程版)</span>
-                    <span class="badge badge-cyan">容量 3.2 KB</span>
+                    <span class="card-title" style="color: var(--cyan);">📊 A. 生データ直結再生 (JSON数値)</span>
+                    <span class="badge badge-cyan">1,232 フレーム解析値</span>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--text-dim); min-height: 44px;">
-                    元データから解析した正しい調性（G minor）・イントロファンファーレ・半音進行メロディを忠実に反映。
+                    battle_pitch_data.json から毎秒40回（25ms毎）の周波数(Hz)と音量(Vol)を読み込み、オシレーターに直結。
                 </p>
                 <button id="btnSynth" class="btn-play btn-synth" onclick="toggleSynth()">
-                    ▶ プログラム合成版 を再生
+                    ▶ 生データ直結版 を再生
                 </button>
                 <div class="specs-grid">
-                    <div class="spec-row"><span>調性 (Key):</span><span class="spec-val" style="color: var(--cyan);">G minor (ト短調)</span></div>
-                    <div class="spec-row"><span>テンポ (BPM):</span><span class="spec-val">158 BPM</span></div>
-                    <div class="spec-row"><span>データ容量:</span><span class="spec-val">3.2 KB (コードのみ)</span></div>
+                    <div class="spec-row"><span>解析ソース:</span><span class="spec-val" style="color: var(--cyan);">battle_pitch_data.json</span></div>
+                    <div class="spec-row"><span>データ点数:</span><span class="spec-val">1,232 点 (25ms間隔)</span></div>
+                    <div class="spec-row"><span>AIの推測・介入:</span><span class="spec-val" style="color: var(--green);">完全にゼロ (数値直結)</span></div>
                 </div>
             </div>
 
             <!-- 2. MP3録音音源 -->
             <div class="card mp3">
                 <div class="card-header">
-                    <span class="card-title" style="color: var(--blue);">🎵 B. 既存のMP3録音ファイル</span>
+                    <span class="card-title" style="color: var(--blue);">🎵 B. 元のMP3音声ファイル</span>
                     <span class="badge badge-blue">容量 240.9 KB</span>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--text-dim); min-height: 44px;">
-                    元となった実際のMP3録音音声ファイル。
+                    Python解析の元となった物理MP3ファイル（battle.mp3）。
                 </p>
                 <button id="btnMp3" class="btn-play btn-mp3" onclick="toggleMp3()">
-                    ▶ 既存の MP3版 を再生
+                    ▶ 元の MP3版 を再生
                 </button>
                 <div class="specs-grid">
-                    <div class="spec-row"><span>調性 (Key):</span><span class="spec-val">G minor (ト短調)</span></div>
-                    <div class="spec-row"><span>ファイル形式:</span><span class="spec-val">MP3 (64 kbps)</span></div>
-                    <div class="spec-row"><span>データ容量:</span><span class="spec-val">240.9 KB</span></div>
+                    <div class="spec-row"><span>ファイル名:</span><span class="spec-val">battle.mp3</span></div>
+                    <div class="spec-row"><span>形式:</span><span class="spec-val">MP3 (64 kbps, 24kHz)</span></div>
+                    <div class="spec-row"><span>長さ:</span><span class="spec-val">30.84 秒</span></div>
                 </div>
             </div>
+        </div>
+
+        <!-- リアルタイム数値モニター -->
+        <div class="data-viewer">
+            <span>再生時間: <b id="lblTime" style="color: #ffffff;">0.00s</b></span>
+            <span>現在周波数: <b id="lblHz" style="color: #ffffff;">0.0 Hz</b></span>
+            <span>現在音量: <b id="lblVol" style="color: #ffffff;">0.00</b></span>
         </div>
 
         <div class="visualizer">
@@ -150,21 +169,31 @@
         </div>
 
         <div class="note-box">
-            💡 <b>解析に基づく音程の構成:</b><br>
-            ・<b>イントロ (0.0s〜3.5s)</b>: D5 ➡ A4 ➡ Bb4 ➡ C5 のファンファーレ ＋ C音のティンパニ連打ロール。<br>
-            ・<b>Aメロ (3.6s〜)</b>: G4 ➡ F#4 ➡ G4 ➡ Bb4 ➡ A4 ➡ G4 ➡ F#4 ➡ D4... というドラクエ1戦闘曲本来のメロディと、G音ベースの8分刻み。<br>
-            ・両者を交互に再生して、メロディの音程が一致しているかご確認ください。
+            💡 <b>透明性の証明:</b><br>
+            ・この「生データ直結版」には、人間やAIが書いた「ドレミの音符」は一切存在しません。<br>
+            ・Pythonが `battle.mp3` から計算した `[{"t": 0.1, "hz": 98.4, "vol": 0.475}, ...]` という1232個の純粋な物理計測値（周波数）を、Web Audioのオシレーターがそのまま発振して音に変換しています。
         </div>
     </div>
 
     <script>
         let audioCtx = null;
+        let pitchData = [];
         let isSynthPlaying = false;
         let isMp3Playing = false;
-        let synthTimer = null;
-        let currentStep = 0;
         let mp3Audio = null;
+        let synthOsc = null;
+        let synthGain = null;
+        let playInterval = null;
+        let startTime = 0;
         let analyser = null;
+
+        // JSON生データのプリロード
+        fetch('battle_pitch_data.json')
+            .then(res => res.json())
+            .then(data => {
+                pitchData = data;
+                console.log('Loaded pitch data frames:', pitchData.length);
+            });
 
         function initAudio() {
             if (!audioCtx) {
@@ -179,230 +208,19 @@
             }
         }
 
-        function mtof(midi) {
-            return midi > 0 ? 440 * Math.pow(2, (midi - 69) / 12) : 0;
-        }
-
-        // MIDI ノート番号定義
-        const N = {
-            C2: 36, D2: 38, Eb2: 39, E2: 40, F2: 41, Fs2: 42, G2: 43, Ab2: 44, A2: 45, Bb2: 46, B2: 47,
-            C3: 48, D3: 50, Eb3: 51, E3: 52, F3: 53, Fs3: 54, G3: 55, Ab3: 56, A3: 57, Bb3: 58, B3: 59,
-            C4: 60, D4: 62, Eb4: 63, E4: 64, F4: 65, Fs4: 66, G4: 67, Ab4: 68, A4: 69, Bb4: 70, B4: 71,
-            C5: 72, D5: 74, Eb5: 75, E5: 76, F5: 77, Fs5: 78, G5: 79, Ab5: 80, A5: 81, Bb5: 82, B5: 83,
-            C6: 84, _: 0
-        };
-
-        // --- データ解析に基づく正確な戦闘曲シーケンス (BPM 158, 16分音符) ---
-        // 1. メロディ (Ch1)
-        const melody_seq = [
-            // イントロ: D5 -> A4 -> Bb4 -> C5 (ロング)
-            N.D5, N.D5, N._, N._, N.A4, N.A4, N._, N._, N.Bb4, N.Bb4, N._, N._, N.C5, N.C5, N.C5, N.C5,
-            N.C5, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._,
-
-            // Aメロ: G4 -> F#4 -> G4 -> Bb4 -> A4 -> G4 -> F#4 -> D4
-            N.G4, N.Fs4, N.G4, N.Bb4, N.A4, N.G4, N.Fs4, N.D4, N.Eb4, N.Fs4, N.A4, N.C5, N.Bb4, N.A4, N.G4, N.Fs4,
-            N.G4, N.Fs4, N.G4, N.Bb4, N.A4, N.G4, N.Fs4, N.D4, N.Eb4, N.D4, N.C4, N.Bb3, N.A3, N.G3, N.A3, N.D4,
-
-            // Bメロ: クライマックス
-            N.Bb4, N.Bb4, N.Bb4, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.Fs4, N.G4, N.A4, N.Fs4, N.G4, N._, N.G4, N._,
-            N.Bb4, N.Bb4, N.Bb4, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.A4, N.Bb4, N.C5, N.A4, N.G4, N._, N._, N._
-        ];
-
-        // 2. ハーモニー (Ch2)
-        const harm_seq = [
-            // イントロ
-            N.A4, N.A4, N._, N._, N.F4, N.F4, N._, N._, N.G4, N.G4, N._, N._, N.A4, N.A4, N.A4, N.A4,
-            N.A4, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._, N._,
-
-            // Aメロ
-            N.D4, N.C4, N.D4, N.G4, N.Fs4, N.D4, N.C4, N.A3, N.C4, N.D4, N.Fs4, N.A4, N.G4, N.Fs4, N.D4, N.C4,
-            N.D4, N.C4, N.D4, N.G4, N.Fs4, N.D4, N.C4, N.A3, N.C4, N.Bb3, N.A3, N.G3, N.Fs3, N.D3, N.Fs3, N.A3,
-
-            // Bメロ
-            N.G4, N.G4, N.G4, N.Bb4, N.A4, N.G4, N.Fs4, N.D4, N.D4, N.Eb4, N.Fs4, N.D4, N.D4, N._, N.D4, N._,
-            N.G4, N.G4, N.G4, N.Bb4, N.A4, N.G4, N.Fs4, N.D4, N.Fs4, N.G4, N.A4, N.Fs4, N.D4, N._, N._, N._
-        ];
-
-        // 3. ベース (Ch3)
-        const bass_seq = [
-            // イントロ: D -> A -> Bb -> C連打
-            N.D3, N.D2, N.D3, N.D2, N.A2, N.A1, N.A2, N.A1, N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.C3, N.C2, N.C3, N.C2,
-            N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2,
-
-            // Aメロ: G -> F# -> F -> E (半音下降)
-            N.G2, N.G1, N.G2, N.G1, N.G2, N.G1, N.G2, N.G1, N.Fs2, N.Fs1, N.Fs2, N.Fs1, N.Fs2, N.Fs1, N.Fs2, N.Fs1,
-            N.G2, N.G1, N.G2, N.G1, N.G2, N.G1, N.G2, N.G1, N.D2, N.D1, N.D2, N.D1, N.D2, N.D1, N.D2, N.D1,
-
-            // Bメロ: Bb -> C -> D -> G
-            N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.D2, N.D1, N.D2, N.D1, N.G2, N.G1, N.G2, N.G1,
-            N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.C3, N.C2, N.C3, N.C2, N.D2, N.D1, N.D2, N.D1, N.G2, N.G1, N.G2, N.G1
-        ];
-
-        // 4. ドラム (Ch4: 1=バス/ティンパニ, 2=スネア, 3=ハット)
-        const drum_seq = [
-            // イントロ
-            1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 2, 2, 2, 2,
-            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-
-            // Aメロ
-            1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
-            1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
-
-            // Bメロ
-            1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
-            1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 2, 2, 2, 2
-        ];
-
-        function playStep() {
-            if (!isSynthPlaying) return;
-            const now = audioCtx.currentTime;
-            const stepDur = (60 / 158) / 4; // BPM 158 の16分音符 = 約0.095秒
-            const idx = currentStep % melody_seq.length;
-
-            // Ch1: メロディ (パルス波)
-            const n1 = melody_seq[idx];
-            if (n1 && n1 > 0) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(mtof(n1), now);
-
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(2800, now);
-
-                gain.gain.setValueAtTime(0.14, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.9);
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(analyser);
-
-                osc.start(now);
-                osc.stop(now + stepDur * 0.95);
-            }
-
-            // Ch2: ハーモニー (矩形波)
-            const n2 = harm_seq[idx];
-            if (n2 && n2 > 0) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(mtof(n2), now);
-
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(1800, now);
-
-                gain.gain.setValueAtTime(0.09, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.85);
-
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(analyser);
-
-                osc.start(now);
-                osc.stop(now + stepDur * 0.9);
-            }
-
-            // Ch3: ベース (三角波+サブサイン波)
-            const n3 = bass_seq[idx];
-            if (n3 && n3 > 0) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(mtof(n3), now);
-
-                gain.gain.setValueAtTime(0.26, now);
-                gain.gain.linearRampToValueAtTime(0.18, now + stepDur * 0.5);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.95);
-
-                osc.connect(gain);
-                gain.connect(analyser);
-
-                osc.start(now);
-                osc.stop(now + stepDur);
-            }
-
-            // Ch4: パーカッション
-            const drum = drum_seq[idx];
-            if (drum && drum > 0) {
-                playDrum(drum, now, stepDur);
-            }
-
-            currentStep++;
-            synthTimer = setTimeout(playStep, stepDur * 1000);
-        }
-
-        function playDrum(type, time, stepDur) {
-            if (type === 1) { // ティンパニ・キック
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(130, time);
-                osc.frequency.exponentialRampToValueAtTime(45, time + 0.08);
-
-                gain.gain.setValueAtTime(0.35, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.09);
-
-                osc.connect(gain);
-                gain.connect(analyser);
-                osc.start(time);
-                osc.stop(time + 0.09);
-            } else if (type === 2) { // スネア
-                const bufferSize = audioCtx.sampleRate * 0.08;
-                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-                const noise = audioCtx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'bandpass';
-                filter.frequency.setValueAtTime(1600, time);
-
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.22, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.07);
-
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(analyser);
-                noise.start(time);
-                noise.stop(time + 0.07);
-            } else { // ハイハット
-                const bufferSize = audioCtx.sampleRate * 0.03;
-                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-                const noise = audioCtx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'highpass';
-                filter.frequency.setValueAtTime(6500, time);
-
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.06, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.03);
-
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(analyser);
-                noise.start(time);
-                noise.stop(time + 0.03);
-            }
-        }
-
         function stopAll() {
-            if (synthTimer) clearTimeout(synthTimer);
+            if (synthOsc) {
+                try { synthOsc.stop(); synthOsc.disconnect(); } catch(e){}
+                synthOsc = null;
+            }
+            if (playInterval) clearInterval(playInterval);
             if (mp3Audio) { mp3Audio.pause(); mp3Audio = null; }
             isSynthPlaying = false;
             isMp3Playing = false;
 
-            document.getElementById('btnSynth').textContent = '▶ プログラム合成版 を再生';
+            document.getElementById('btnSynth').textContent = '▶ 生データ直結版 を再生';
             document.getElementById('btnSynth').classList.remove('playing');
-            document.getElementById('btnMp3').textContent = '▶ 既存の MP3版 を再生';
+            document.getElementById('btnMp3').textContent = '▶ 元の MP3版 を再生';
             document.getElementById('btnMp3').classList.remove('playing');
         }
 
@@ -414,11 +232,56 @@
             }
             stopAll();
             isSynthPlaying = true;
-            currentStep = 0;
             const btn = document.getElementById('btnSynth');
             btn.textContent = '⏹ 停止する';
             btn.classList.add('playing');
-            playStep();
+
+            // 生データ直結オシレーターの生成
+            synthOsc = audioCtx.createOscillator();
+            synthGain = audioCtx.createGain();
+            synthOsc.type = 'sawtooth';
+
+            // フィルター
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+
+            synthOsc.connect(filter);
+            filter.connect(synthGain);
+            synthGain.connect(analyser);
+
+            const now = audioCtx.currentTime;
+            startTime = now;
+
+            // JSONの全フレーム（1232点）をスケジュール
+            pitchData.forEach(pt => {
+                const targetTime = now + pt.t;
+                if (pt.hz > 0 && pt.vol > 0) {
+                    synthOsc.frequency.setValueAtTime(pt.hz, targetTime);
+                    synthGain.gain.setValueAtTime(pt.vol * 0.25, targetTime);
+                } else {
+                    synthGain.gain.setValueAtTime(0.0001, targetTime);
+                }
+            });
+
+            synthOsc.start(now);
+
+            // 画面数値モニターの更新ループ
+            playInterval = setInterval(() => {
+                const elapsed = audioCtx.currentTime - startTime;
+                if (elapsed >= 30.84) {
+                    stopAll();
+                    return;
+                }
+                document.getElementById('lblTime').textContent = elapsed.toFixed(2) + 's';
+                const frameIdx = Math.floor(elapsed / 0.025);
+                if (frameIdx < pitchData.length) {
+                    const cur = pitchData[frameIdx];
+                    document.getElementById('lblHz').textContent = cur.hz > 0 ? cur.hz.toFixed(1) + ' Hz' : '0.0 Hz (休符)';
+                    document.getElementById('lblVol').textContent = cur.vol.toFixed(2);
+                }
+            }, 50);
+
             drawVisualizer();
         }
 
