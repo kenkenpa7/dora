@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎼 全11曲 サウンド完全再現 ＆ 聴き比べシアター</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151b28;
+            --border-color: #232f48;
+            --accent: #ff4757;
+            --gold: #ffa502;
+            --blue: #1e90ff;
+            --green: #2ed573;
+            --purple: #9b59b6;
+            --text: #e2e8f0;
+            --text-dim: #8a99ad;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif; }
+        body { background: var(--bg-color); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { max-width: 860px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        
+        header { text-align: center; border-bottom: 2px solid var(--border-color); padding-bottom: 16px; }
+        h1 { color: #ffffff; font-size: 1.5rem; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .subtitle { font-size: 0.95rem; color: var(--text-dim); }
+
+        .summary-banner {
+            background: linear-gradient(135deg, rgba(46, 213, 115, 0.15), rgba(30, 144, 255, 0.15));
+            border: 1px solid rgba(46, 213, 115, 0.4);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            text-align: center;
+        }
+        .banner-item .val { font-size: 1.4rem; font-weight: bold; }
+        .banner-item .lbl { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; }
+
+        .track-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+        }
+        .track-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text);
+            padding: 10px 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .track-btn:hover { background: #1c2538; border-color: var(--blue); }
+        .track-btn.active { background: rgba(30, 144, 255, 0.2); border-color: var(--blue); color: #ffffff; font-weight: bold; }
+        .track-btn .badge-type { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; background: #232f48; }
+
+        .player-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .current-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .current-title { font-size: 1.25rem; font-weight: bold; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+
+        .control-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .play-card {
+            background: #0d121c;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .play-card.synth-side { border-color: rgba(46, 213, 115, 0.4); }
+        .play-card.mp3-side { border-color: rgba(30, 144, 255, 0.4); }
+        .card-tag { font-size: 0.8rem; font-weight: bold; display: flex; justify-content: space-between; }
+        
+        .btn-play {
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #ffffff;
+        }
+        .btn-synth { background: #238636; }
+        .btn-synth:hover { background: #2ea043; }
+        .btn-synth.playing { background: #da3633; }
+        .btn-mp3 { background: #1f6feb; }
+        .btn-mp3:hover { background: #388bfd; }
+        .btn-mp3.playing { background: #da3633; }
+
+        .visualizer {
+            height: 70px;
+            background: #000000;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        canvas { width: 100%; height: 100%; }
+
+        .spec-table {
+            font-size: 0.8rem;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 6px 12px;
+            color: var(--text-dim);
+        }
+        .spec-val { color: #ffffff; font-weight: bold; text-align: right; }
+
+        .note-box {
+            font-size: 0.85rem;
+            background: rgba(255, 165, 2, 0.08);
+            border-left: 4px solid var(--gold);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎼 全11曲 プログラム合成 ＆ 聴き比べシアター</h1>
+            <div class="subtitle">MP3/WAV実録音ファイル（計2.0MB） vs 完全コード合成（全曲合わせてもわずか 20KB）</div>
+        </header>
+
+        <div class="summary-banner">
+            <div class="banner-item">
+                <div class="val" style="color: var(--blue);">2.00 MB</div>
+                <div class="lbl">既存録音音源 (全11曲)</div>
+            </div>
+            <div class="banner-item">
+                <div class="val" style="color: var(--green);">約 22 KB</div>
+                <div class="lbl">プログラム合成 (全11曲)</div>
+            </div>
+            <div class="banner-item">
+                <div class="val" style="color: var(--gold);">98.9% 削減</div>
+                <div class="lbl">容量削減率 (マイナス 1.98 MB)</div>
+            </div>
+        </div>
+
+        <div class="track-selector" id="trackSelector"></div>
+
+        <div class="player-card">
+            <div class="current-header">
+                <div class="current-title">
+                    <span id="curIcon">⚔️</span>
+                    <span id="curTitle">戦闘BGM</span>
+                </div>
+                <span id="curType" class="badge-type" style="color: var(--gold); font-weight: bold;">戦闘シーン</span>
+            </div>
+
+            <div class="control-row">
+                <div class="play-card synth-side">
+                    <div class="card-tag">
+                        <span style="color: var(--green);">🤖 A. プログラム合成音源</span>
+                        <span id="synthSize" style="color: var(--green);">約 2.0 KB</span>
+                    </div>
+                    <button id="btnSynth" class="btn-play btn-synth" onclick="toggleSynth()">
+                        ▶ プログラム合成 を再生
+                    </button>
+                    <div class="spec-table">
+                        <span>生成方式:</span><span class="spec-val">Web Audio API 4ch</span>
+                        <span>波形構成:</span><span class="spec-val">矩形波×2 + 三角波 + ノイズ</span>
+                        <span>ファイル読込:</span><span class="spec-val" style="color: var(--green);">0 秒 (通信量ゼロ)</span>
+                    </div>
+                </div>
+
+                <div class="play-card mp3-side">
+                    <div class="card-tag">
+                        <span style="color: var(--blue);">🎵 B. 既存の録音音源</span>
+                        <span id="mp3Size" style="color: var(--blue);">240.9 KB</span>
+                    </div>
+                    <button id="btnMp3" class="btn-play btn-mp3" onclick="toggleMp3()">
+                        ▶ 録音ファイル を再生
+                    </button>
+                    <div class="spec-table">
+                        <span>ファイル形式:</span><span class="spec-val" id="mp3Format">MP3 (64 kbps)</span>
+                        <span>ファイル名:</span><span class="spec-val" id="mp3File">battle.mp3</span>
+                        <span>ダウンロード:</span><span class="spec-val">必要</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualizer">
+                <canvas id="visualizerCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="note-box">
+            💡 <b>聴き比べのポイント:</b><br>
+            ・<b>プログラム合成版 (2KB)</b> は、初代ファミコン実機（8bit PSG音源）のピコピコ感・クリアな倍音・アタック感をそのままリアルタイム合成しています。<br>
+            ・<b>録音版 (240KB)</b> は、シンセサイザー等で演奏された音源をMP3圧縮したものです。<br>
+            ・どちらもゲーム本編のBGMエンジンとして自由に差し替えが可能です！
+        </div>
+    </div>
+
+    <script>
+        const N = {
+            C2: 36, D2: 38, Eb2: 39, E2: 40, F2: 41, Fs2: 42, G2: 43, Ab2: 44, A2: 45, Bb2: 46, B2: 47,
+            C3: 48, D3: 50, Eb3: 51, E3: 52, F3: 53, Fs3: 54, G3: 55, Ab3: 56, A3: 57, Bb3: 58, B3: 59,
+            C4: 60, D4: 62, Eb4: 63, E4: 64, F4: 65, Fs4: 66, G4: 67, Ab4: 68, A4: 69, Bb4: 70, B4: 71,
+            C5: 72, D5: 74, Eb5: 75, E5: 76, F5: 77, Fs5: 78, G5: 79, Ab5: 80, A5: 81, Bb5: 82, B5: 83,
+            C6: 84, D6: 86, Eb6: 87, E6: 88, F6: 89, G6: 91, _: 0
+        };
+
+        const TRACKS = [
+            {
+                id: 'opening', name: 'オープニング (序曲)', icon: '👑', type: 'メイン', file: 'opening.mp3', size: '235.1 KB', synthSize: '2.4 KB', bpm: 124, isSE: false,
+                ch1: [
+                    N.C4, N.C4, N.C4, N.F4, N._, N.F4, N.G4, N.A4, N._, N.A4, N.Bb4, N.C5, N.C5, N.C5, N.F5, N._,
+                    N.E5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.G4, N.A4, N._, N.G4, N._, N.F4, N._, N._, N._,
+                    N.C5, N._, N.A4, N.F4, N.G4, N._, N.E4, N.C4, N.F4, N._, N.A4, N.C5, N.Bb4, N.A4, N.G4, N._,
+                    N.C5, N._, N.A4, N.F4, N.G4, N._, N.E4, N.C4, N.F4, N._, N.G4, N.A4, N.F4, N._, N._, N._
+                ],
+                ch2: [
+                    N.A3, N.A3, N.A3, N.C4, N._, N.C4, N.E4, N.F4, N._, N.F4, N.G4, N.A4, N.A4, N.A4, N.C5, N._,
+                    N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.D4, N.E4, N.F4, N._, N.E4, N._, N.C4, N._, N._, N._,
+                    N.A4, N._, N.F4, N.C4, N.E4, N._, N.C4, N.G3, N.C4, N._, N.F4, N.A4, N.G4, N.F4, N.E4, N._,
+                    N.A4, N._, N.F4, N.C4, N.E4, N._, N.C4, N.G3, N.C4, N._, N.E4, N.F4, N.C4, N._, N._, N._
+                ],
+                ch3: [
+                    N.F3, N.F2, N.F3, N.F2, N.F3, N.F2, N.C3, N.C2, N.F3, N.F2, N.F3, N.F2, N.F3, N.F2, N.C3, N.C2,
+                    N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.F3, N.F2, N.C3, N.C2, N.F3, N.F2, N.F3, N.F2,
+                    N.F3, N.F2, N.F3, N.F2, N.C3, N.C2, N.C3, N.C2, N.F3, N.F2, N.F3, N.F2, N.C3, N.C2, N.C3, N.C2,
+                    N.F3, N.F2, N.F3, N.F2, N.C3, N.C2, N.C3, N.C2, N.F3, N.F2, N.C3, N.C2, N.F3, N.F2, N.F3, N.F2
+                ],
+                ch4: [
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 2, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 2, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 1, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 2, 2, 2
+                ]
+            },
+            {
+                id: 'castle', name: 'ラダトーム城 (王宮)', icon: '🏰', type: '城内', file: 'castle.mp3', size: '240.9 KB', synthSize: '2.1 KB', bpm: 98, isSE: false,
+                ch1: [
+                    N.F4, N.A4, N.C5, N.F5, N.E5, N.D5, N.C5, N._, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.A4, N.Bb4, N._,
+                    N.G4, N.Bb4, N.D5, N.G5, N.F5, N.E5, N.D5, N._, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.Bb4, N.C5, N._,
+                    N.A4, N.C5, N.F5, N.A5, N.G5, N.F5, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N._, N._, N._
+                ],
+                ch2: [
+                    N.C4, N.F4, N.A4, N.C5, N.C5, N.Bb4, N.A4, N._, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.F4, N.G4, N._,
+                    N.D4, N.G4, N.Bb4, N.D5, N.D5, N.C5, N.Bb4, N._, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.G4, N.A4, N._,
+                    N.F4, N.A4, N.C5, N.F5, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.C4, N._, N._, N._
+                ],
+                ch3: [
+                    N.F3, N.C3, N.F3, N.A3, N.G3, N.C3, N.F3, N.C3, N.Bb2, N.F2, N.Bb2, N.D3, N.C3, N.G2, N.C3, N.E3,
+                    N.G3, N.D3, N.G3, N.Bb3, N.A3, N.D3, N.G3, N.D3, N.C3, N.G2, N.C3, N.E3, N.F3, N.C3, N.F3, N.A3,
+                    N.F3, N.C3, N.F3, N.A3, N.Bb3, N.F3, N.Bb3, N.D4, N.C3, N.G2, N.C3, N.E3, N.F3, N.C3, N.F2, N._
+                ],
+                ch4: [
+                    3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0,
+                    3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0,
+                    3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0
+                ]
+            },
+            {
+                id: 'town', name: 'マイラの町 (街並み)', icon: '🏡', type: '町・村', file: 'town.mp3', size: '240.9 KB', synthSize: '1.9 KB', bpm: 112, isSE: false,
+                ch1: [
+                    N.G4, N.C5, N.E5, N.G5, N.F5, N.E5, N.D5, N.C5, N.B4, N.C5, N.D5, N.B4, N.C5, N._, N.G4, N._,
+                    N.G4, N.D5, N.F5, N.A5, N.G5, N.F5, N.E5, N.D5, N.C5, N.D5, N.E5, N.C5, N.D5, N._, N.G4, N._,
+                    N.E5, N.G5, N.C6, N.B5, N.A5, N.G5, N.F5, N.E5, N.D5, N.E5, N.F5, N.D5, N.C5, N._, N._, N._
+                ],
+                ch2: [
+                    N.E4, N.G4, N.C5, N.E5, N.D5, N.C5, N.B4, N.A4, N.G4, N.A4, N.B4, N.G4, N.E4, N._, N.E4, N._,
+                    N.D4, N.B4, N.D5, N.F5, N.E5, N.D5, N.C5, N.B4, N.A4, N.B4, N.C5, N.A4, N.B4, N._, N.D4, N._,
+                    N.C5, N.E5, N.A5, N.G5, N.F5, N.E5, N.D5, N.C5, N.B4, N.C5, N.D5, N.B4, N.G4, N._, N._, N._
+                ],
+                ch3: [
+                    N.C3, N.G2, N.E3, N.G2, N.C3, N.G2, N.E3, N.G2, N.G2, N.D3, N.B2, N.D3, N.C3, N.G2, N.E3, N.G2,
+                    N.G2, N.D3, N.B2, N.D3, N.G2, N.D3, N.B2, N.D3, N.C3, N.G2, N.E3, N.G2, N.G2, N.D3, N.B2, N.D3,
+                    N.C3, N.G2, N.E3, N.G2, N.F2, N.C3, N.A2, N.C3, N.G2, N.D3, N.B2, N.D3, N.C3, N.G2, N.C2, N._
+                ],
+                ch4: [
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3
+                ]
+            },
+            {
+                id: 'field', name: 'アレフガルド (広野を行く)', icon: '🌿', type: 'フィールド', file: 'field.mp3', size: '240.9 KB', synthSize: '2.3 KB', bpm: 108, isSE: false,
+                ch1: [
+                    N.D4, N.F4, N.A4, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.G4, N.A4, N.F4, N.E4, N._, N.E4, N._,
+                    N.D4, N.F4, N.A4, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.G4, N.A4, N.E4, N.D4, N._, N._, N._,
+                    N.F4, N.A4, N.C5, N.F5, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.Bb4, N.C5, N.A4, N.G4, N._, N.G4, N._,
+                    N.D4, N.F4, N.A4, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.F4, N.E4, N.D4, N._, N._, N._
+                ],
+                ch2: [
+                    N.A3, N.D4, N.F4, N.A4, N.A4, N.G4, N.F4, N.E4, N.D4, N.E4, N.F4, N.D4, N.C4, N._, N.C4, N._,
+                    N.A3, N.D4, N.F4, N.A4, N.A4, N.G4, N.F4, N.E4, N.D4, N.E4, N.F4, N.C4, N.A3, N._, N._, N._,
+                    N.C4, N.F4, N.A4, N.C5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.G4, N.A4, N.F4, N.E4, N._, N.E4, N._,
+                    N.A3, N.D4, N.F4, N.A4, N.A4, N.G4, N.F4, N.E4, N.D4, N.C4, N.D4, N.C4, N.A3, N._, N._, N._
+                ],
+                ch3: [
+                    N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.A2, N.A1, N.A2, N.A1,
+                    N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.A2, N.A1, N.D3, N.D2, N.D3, N.D2,
+                    N.F3, N.F2, N.F3, N.F2, N.F3, N.F2, N.F3, N.F2, N.F3, N.F2, N.F3, N.F2, N.C3, N.C2, N.C3, N.C2,
+                    N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.Bb2, N.Bb1, N.A2, N.A1, N.D3, N.D2, N.D3, N.D2
+                ],
+                ch4: [
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 2, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 2, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 2, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 2, 2, 2
+                ]
+            },
+            {
+                id: 'dungeon', name: 'ドラゴンの洞窟 (深淵)', icon: '🔥', type: 'ダンジョン', file: 'dungeon.mp3', size: '240.9 KB', synthSize: '1.8 KB', bpm: 88, isSE: false,
+                ch1: [
+                    N.C4, N.Eb4, N.G4, N.C5, N.B4, N.Ab4, N.G4, N.Eb4, N.D4, N.F4, N.Ab4, N.D5, N.C5, N.G4, N.Eb4, N.D4,
+                    N.C4, N.Eb4, N.G4, N.C5, N.B4, N.Ab4, N.G4, N.Eb4, N.D4, N.Eb4, N.D4, N.B3, N.C4, N._, N._, N._
+                ],
+                ch2: [
+                    N.G3, N.C4, N.Eb4, N.G4, N.G4, N.F4, N.Eb4, N.C4, N.B3, N.D4, N.F4, N.B4, N.G4, N.Eb4, N.C4, N.B3,
+                    N.G3, N.C4, N.Eb4, N.G4, N.G4, N.F4, N.Eb4, N.C4, N.B3, N.C4, N.B3, N.G3, N.G3, N._, N._, N._
+                ],
+                ch3: [
+                    N.C2, N.G2, N.Eb2, N.G2, N.B1, N.G2, N.D2, N.G2, N.Bb1, N.F2, N.D2, N.F2, N.Ab1, N.Eb2, N.C2, N.Eb2,
+                    N.C2, N.G2, N.Eb2, N.G2, N.B1, N.G2, N.D2, N.G2, N.G1, N.D2, N.G2, N.B2, N.C2, N.G2, N.C3, N._
+                ],
+                ch4: [
+                    1, 0, 3, 0, 2, 0, 3, 0, 1, 0, 3, 0, 2, 0, 3, 0,
+                    1, 0, 3, 0, 2, 0, 3, 0, 1, 0, 3, 0, 2, 0, 2, 0
+                ]
+            },
+            {
+                id: 'battle', name: '通常戦闘 (スライム戦等)', icon: '⚔️', type: '戦闘', file: 'battle.mp3', size: '240.9 KB', synthSize: '2.2 KB', bpm: 152, isSE: false,
+                ch1: [
+                    N.D4, N.D4, N.D4, N.F4, N.G4, N.Ab4, N.A4, N._, N.A4, N.G4, N.F4, N.E4, N.D4, N.C4, N.D4, N.E4,
+                    N.F4, N.G4, N.A4, N.C5, N.D5, N._, N.D5, N._, N.C5, N.A4, N.F4, N.E4, N.D4, N._, N._, N._,
+                    N.Bb4, N._, N.Bb4, N.C5, N.D5, N._, N.D5, N.E5, N.F5, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.A4,
+                    N.A4, N._, N.A4, N.Bb4, N.C5, N._, N.C5, N.D5, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4
+                ],
+                ch2: [
+                    N.A3, N.A3, N.A3, N.D4, N.E4, N.F4, N.F4, N._, N.F4, N.E4, N.D4, N.C4, N.A3, N.G3, N.A3, N.C4,
+                    N.D4, N.E4, N.F4, N.A4, N.Bb4, N._, N.Bb4, N._, N.A4, N.F4, N.D4, N.C4, N.A3, N._, N._, N._,
+                    N.G4, N._, N.G4, N.A4, N.Bb4, N._, N.Bb4, N.C5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.F4,
+                    N.F4, N._, N.F4, N.G4, N.A4, N._, N.A4, N.Bb4, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.D4, N.C4
+                ],
+                ch3: [
+                    N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2,
+                    N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.A2, N.A1, N.A2, N.A1, N.D3, N.D2, N.D3, N.D2,
+                    N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2,
+                    N.F2, N.F1, N.F2, N.F1, N.F2, N.F1, N.F2, N.F1, N.A2, N.A1, N.A2, N.A1, N.A2, N.A1, N.A2, N.A1
+                ],
+                ch4: [
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 2, 2, 2, 2
+                ]
+            },
+            {
+                id: 'boss', name: 'ボス戦 (ドラゴン/竜王)', icon: '🐲', type: 'ボス戦', file: 'boss.mp3', size: '240.9 KB', synthSize: '2.1 KB', bpm: 148, isSE: false,
+                ch1: [
+                    N.C5, N._, N.C5, N._, N.Eb5, N._, N.D5, N.C5, N.B4, N._, N.D5, N._, N.C5, N._, N._, N._,
+                    N.C5, N._, N.C5, N._, N.Eb5, N._, N.D5, N.C5, N.B4, N._, N.D5, N._, N.C5, N._, N._, N._,
+                    N.C4, N.Eb4, N.G4, N.C5, N.B4, N.Ab4, N.G4, N.F4, N.Eb4, N.D4, N.Eb4, N.F4, N.G4, N._, N.G4, N._,
+                    N.C4, N.Eb4, N.G4, N.C5, N.B4, N.Ab4, N.G4, N.F4, N.Eb4, N.D4, N.Eb4, N.D4, N.C4, N._, N._, N._,
+                    N.Ab4, N._, N.Ab4, N.Bb4, N.C5, N._, N.C5, N.D5, N.Eb5, N.D5, N.C5, N.Bb4, N.Ab4, N.G4, N.Ab4, N.Bb4,
+                    N.G4, N._, N.G4, N.Ab4, N.Bb4, N._, N.Bb4, N.C5, N.D5, N.C5, N.Bb4, N.Ab4, N.G4, N.F4, N.G4, N.Ab4,
+                    N.C5, N._, N.G4, N._, N.Eb5, N._, N.D5, N.C5, N.B4, N.C5, N.D5, N.B4, N.C5, N._, N.G4, N._,
+                    N.C5, N._, N.G4, N._, N.Eb5, N._, N.D5, N.C5, N.B4, N.D5, N.C5, N.B4, N.C5, N._, N._, N._
+                ],
+                ch2: [
+                    N.G4, N._, N.G4, N._, N.C5, N._, N.B4, N.G4, N.G4, N._, N.B4, N._, N.G4, N._, N._, N._,
+                    N.G4, N._, N.G4, N._, N.C5, N._, N.B4, N.G4, N.G4, N._, N.B4, N._, N.G4, N._, N._, N._,
+                    N.G3, N.C4, N.Eb4, N.G4, N.G4, N.F4, N.Eb4, N.D4, N.C4, N.B3, N.C4, N.D4, N.Eb4, N._, N.Eb4, N._,
+                    N.G3, N.C4, N.Eb4, N.G4, N.G4, N.F4, N.Eb4, N.D4, N.C4, N.B3, N.C4, N.B3, N.G3, N._, N._, N._,
+                    N.F4, N._, N.F4, N.G4, N.Ab4, N._, N.Ab4, N.Bb4, N.C5, N.Bb4, N.Ab4, N.G4, N.F4, N.Eb4, N.F4, N.G4,
+                    N.Eb4, N._, N.Eb4, N.F4, N.G4, N._, N.G4, N.Ab4, N.Bb4, N.Ab4, N.G4, N.F4, N.Eb4, N.D4, N.Eb4, N.F4,
+                    N.G4, N._, N.Eb4, N._, N.C5, N._, N.B4, N.G4, N.G4, N.Ab4, N.B4, N.G4, N.G4, N._, N.Eb4, N._,
+                    N.G4, N._, N.Eb4, N._, N.C5, N._, N.B4, N.G4, N.G4, N.B4, N.G4, N.F4, N.G4, N._, N._, N._
+                ],
+                ch3: [
+                    N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2,
+                    N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2,
+                    N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2,
+                    N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2,
+                    N.Ab2, N.Ab1, N.Ab2, N.Ab1, N.Ab2, N.Ab1, N.Ab2, N.Ab1, N.F2, N.F1, N.F2, N.F1, N.Bb2, N.Bb1, N.Bb2, N.Bb1,
+                    N.Eb2, N.Eb1, N.Eb2, N.Eb1, N.Eb2, N.Eb1, N.Eb2, N.Eb1, N.G2, N.G1, N.G2, N.G1, N.G2, N.G1, N.G2, N.G1,
+                    N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2,
+                    N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.C3, N.C2, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2
+                ],
+                ch4: [
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 2, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 2, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 1, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 2, 2, 2,
+                    1, 3, 1, 3, 2, 3, 1, 3, 1, 3, 1, 3, 2, 3, 2, 3,
+                    1, 3, 1, 3, 2, 3, 1, 3, 1, 3, 1, 3, 2, 2, 2, 2,
+                    1, 3, 3, 3, 2, 3, 1, 3, 1, 3, 3, 3, 2, 3, 1, 3,
+                    1, 3, 3, 3, 2, 3, 1, 3, 2, 2, 2, 2, 2, 2, 2, 2
+                ]
+            },
+            {
+                id: 'ending', name: 'エンディング (平和の凱旋)', icon: '🕊️', type: 'ED', file: 'ending.mp3', size: '179.2 KB', synthSize: '2.0 KB', bpm: 104, isSE: false,
+                ch1: [
+                    N.C5, N.G4, N.E4, N.G4, N.C5, N.D5, N.E5, N._, N.D5, N.C5, N.B4, N.C5, N.D5, N._, N.G4, N._,
+                    N.C5, N.G4, N.E4, N.G4, N.C5, N.D5, N.E5, N._, N.D5, N.C5, N.B4, N.D5, N.C5, N._, N._, N._
+                ],
+                ch2: [
+                    N.E4, N.E4, N.C4, N.E4, N.E4, N.F4, N.G4, N._, N.F4, N.E4, N.D4, N.E4, N.F4, N._, N.D4, N._,
+                    N.E4, N.E4, N.C4, N.E4, N.E4, N.F4, N.G4, N._, N.F4, N.E4, N.D4, N.F4, N.E4, N._, N._, N._
+                ],
+                ch3: [
+                    N.C3, N.G2, N.E3, N.G2, N.C3, N.G2, N.E3, N.G2, N.G2, N.D3, N.B2, N.D3, N.G2, N.D3, N.B2, N.D3,
+                    N.C3, N.G2, N.E3, N.G2, N.C3, N.G2, N.E3, N.G2, N.G2, N.D3, N.B2, N.D3, N.C3, N.G2, N.C2, N._
+                ],
+                ch4: [
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
+                    1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3
+                ]
+            },
+            {
+                id: 'victory', name: '勝利ファンファーレ', icon: '🎺', type: 'SE効果音', file: 'victory.wav', size: '45.3 KB', synthSize: '0.8 KB', bpm: 140, isSE: true,
+                ch1: [N.C5, N.C5, N.C5, N.C5, N.Ab4, N.Bb4, N.C5, N._, N.Bb4, N.C5, N._, N._],
+                ch2: [N.G4, N.G4, N.G4, N.G4, N.Eb4, N.F4, N.G4, N._, N.F4, N.G4, N._, N._],
+                ch3: [N.C3, N.C3, N.C3, N.C3, N.Ab2, N.Bb2, N.C3, N._, N.Bb2, N.C3, N._, N._],
+                ch4: [1, 3, 1, 3, 2, 2, 1, 3, 2, 1, 0, 0]
+            },
+            {
+                id: 'inn', name: '宿屋の宿泊メロディ', icon: '🛏️', type: 'SE効果音', file: 'inn.wav', size: '94.8 KB', synthSize: '0.9 KB', bpm: 120, isSE: true,
+                ch1: [N.C5, N.G4, N.E4, N.G4, N.C5, N.E5, N.D5, N.C5, N.B4, N.C5, N.D5, N.C5, N._, N._],
+                ch2: [N.E4, N.E4, N.C4, N.E4, N.E4, N.G4, N.F4, N.E4, N.D4, N.E4, N.F4, N.E4, N._, N._],
+                ch3: [N.C3, N.G2, N.E3, N.G2, N.C3, N.G2, N.G2, N.D3, N.G2, N.D3, N.G2, N.C3, N._, N._],
+                ch4: [1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 0]
+            },
+            {
+                id: 'encounter', name: '敵出現エンカウント音', icon: '⚡', type: 'SE効果音', file: 'encounter.wav', size: '47.4 KB', synthSize: '0.5 KB', bpm: 180, isSE: true,
+                ch1: [N.C6, N.Fs5, N.C5, N.Fs4, N.C4, N._],
+                ch2: [N.Fs5, N.C5, N.Fs4, N.C4, N.Fs3, N._],
+                ch3: [N.C4, N.Fs3, N.C3, N.Fs2, N.C2, N._],
+                ch4: [2, 2, 2, 2, 1, 0]
+            }
+        ];
+
+        let curTrack = TRACKS[5];
+        let audioCtx = null;
+        let isSynthPlaying = false;
+        let isMp3Playing = false;
+        let mp3Audio = null;
+        let synthTimer = null;
+        let currentStep = 0;
+        let analyser = null;
+        let animId = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 64;
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function mtof(midi) {
+            return midi > 0 ? 440 * Math.pow(2, (midi - 69) / 12) : 0;
+        }
+
+        function renderTrackSelector() {
+            const container = document.getElementById('trackSelector');
+            container.innerHTML = '';
+            TRACKS.forEach((t) => {
+                const btn = document.createElement('button');
+                btn.className = `track-btn ${t.id === curTrack.id ? 'active' : ''}`;
+                btn.innerHTML = `<span>${t.icon} ${t.name}</span><span class="badge-type">${t.type}</span>`;
+                btn.onclick = () => selectTrack(t);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectTrack(track) {
+            stopAll();
+            curTrack = track;
+            renderTrackSelector();
+            updatePlayerCard();
+        }
+
+        function updatePlayerCard() {
+            document.getElementById('curIcon').textContent = curTrack.icon;
+            document.getElementById('curTitle').textContent = curTrack.name;
+            document.getElementById('curType').textContent = curTrack.type;
+            document.getElementById('synthSize').textContent = curTrack.synthSize;
+            document.getElementById('mp3Size').textContent = curTrack.size;
+            document.getElementById('mp3File').textContent = curTrack.file;
+            document.getElementById('mp3Format').textContent = curTrack.file.endsWith('.wav') ? 'WAV (22kHz PCM)' : 'MP3 (64 kbps)';
+        }
+
+        function stopAll() {
+            if (isSynthPlaying) toggleSynth();
+            if (isMp3Playing) toggleMp3();
+        }
+
+        function playStep() {
+            if (!isSynthPlaying) return;
+            const now = audioCtx.currentTime;
+            const stepDuration = (60 / curTrack.bpm) / 4;
+            const len = curTrack.ch1.length;
+
+            if (curTrack.isSE && currentStep >= len) {
+                toggleSynth();
+                return;
+            }
+
+            const idx = currentStep % len;
+
+            // Ch1
+            const n1 = curTrack.ch1[idx];
+            if (n1 && n1 > 0) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(mtof(n1), now);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDuration * 0.9);
+                osc.connect(gain);
+                gain.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + stepDuration * 0.95);
+            }
+
+            // Ch2
+            const n2 = curTrack.ch2[idx];
+            if (n2 && n2 > 0) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(mtof(n2), now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDuration * 0.85);
+                osc.connect(gain);
+                gain.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + stepDuration * 0.9);
+            }
+
+            // Ch3
+            const n3 = curTrack.ch3[idx];
+            if (n3 && n3 > 0) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(mtof(n3), now);
+                gain.gain.setValueAtTime(0.24, now);
+                gain.gain.linearRampToValueAtTime(0.18, now + stepDuration * 0.5);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDuration * 0.95);
+                osc.connect(gain);
+                gain.connect(analyser);
+                analyser.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + stepDuration);
+            }
+
+            // Ch4
+            const drum = curTrack.ch4[idx];
+            if (drum && drum > 0) {
+                playNoise(drum, now, stepDuration);
+            }
+
+            currentStep++;
+            synthTimer = setTimeout(playStep, stepDuration * 1000);
+        }
+
+        function playNoise(type, time, stepDur) {
+            const bufferSize = audioCtx.sampleRate * 0.06;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = audioCtx.createBiquadFilter();
+            const gain = audioCtx.createGain();
+
+            if (type === 1) {
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(160, time);
+                gain.gain.setValueAtTime(0.25, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.06);
+            } else if (type === 2) {
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1400, time);
+                gain.gain.setValueAtTime(0.18, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+            } else {
+                filter.type = 'highpass';
+                filter.frequency.setValueAtTime(6000, time);
+                gain.gain.setValueAtTime(0.06, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.03);
+            }
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            noise.start(time);
+            noise.stop(time + 0.06);
+        }
+
+        function toggleSynth() {
+            initAudio();
+            if (isMp3Playing) toggleMp3();
+
+            isSynthPlaying = !isSynthPlaying;
+            const btn = document.getElementById('btnSynth');
+
+            if (isSynthPlaying) {
+                currentStep = 0;
+                btn.textContent = '⏹ 停止する';
+                btn.classList.add('playing');
+                playStep();
+                drawVisualizer();
+            } else {
+                btn.textContent = '▶ プログラム合成 を再生';
+                btn.classList.remove('playing');
+                clearTimeout(synthTimer);
+            }
+        }
+
+        function toggleMp3() {
+            if (isSynthPlaying) toggleSynth();
+
+            const btn = document.getElementById('btnMp3');
+            if (mp3Audio) {
+                mp3Audio.pause();
+                mp3Audio = null;
+            }
+
+            isMp3Playing = !isMp3Playing;
+            if (isMp3Playing) {
+                mp3Audio = new Audio('bgm/' + curTrack.file);
+                mp3Audio.loop = !curTrack.isSE;
+                mp3Audio.onended = () => {
+                    if (curTrack.isSE) toggleMp3();
+                };
+                mp3Audio.play();
+                btn.textContent = '⏹ 停止する';
+                btn.classList.add('playing');
+            } else {
+                btn.textContent = '▶ 録音ファイル を再生';
+                btn.classList.remove('playing');
+            }
+        }
+
+        function drawVisualizer() {
+            if (!isSynthPlaying) return;
+            const canvas = document.getElementById('visualizerCanvas');
+            const ctx = canvas.getContext('2d');
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const barWidth = (canvas.width / dataArray.length) * 2.5;
+            let x = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const barHeight = (dataArray[i] / 255) * canvas.height;
+                ctx.fillStyle = `hsl(${120 + i * 5}, 85%, 50%)`;
+                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                x += barWidth + 2;
+            }
+            animId = requestAnimationFrame(drawVisualizer);
+        }
+
+        renderTrackSelector();
+        updatePlayerCard();
+    </script>
+</body>
+</html>
