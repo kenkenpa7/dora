@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ドラゴンクエスト1風 RPG プロトタイプ</title>
+    
+    <!-- PWA & Mobile Web App 設定 -->
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="レトロRPG">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="header-bar">
+            <span class="title-tag">⚔️ DRAGON QUEST I 風 RPG</span>
+            <button id="soundToggle" class="sound-toggle-btn" onclick="toggleMute()">🔊 サウンド: ON</button>
+        </header>
+
+        <main class="canvas-wrapper">
+            <canvas id="gameCanvas" width="480" height="384"></canvas>
+        </main>
+
+        <section class="controls-container">
+            <!-- スマホ・タッチ用 バーチャルパッド -->
+            <div class="virtual-pad">
+                <div class="dpad-container">
+                    <button id="btnUp" class="pad-btn btn-up" aria-label="上">▲</button>
+                    <button id="btnDown" class="pad-btn btn-down" aria-label="下">▼</button>
+                    <button id="btnLeft" class="pad-btn btn-left" aria-label="左">◀</button>
+                    <button id="btnRight" class="pad-btn btn-right" aria-label="右">▶</button>
+                </div>
+                <div class="action-buttons">
+                    <button id="btnB" class="action-btn btn-b" aria-label="Bボタン">
+                        <span>B</span>
+                        <span class="btn-sub">戻る</span>
+                    </button>
+                    <button id="btnA" class="action-btn btn-a" aria-label="Aボタン">
+                        <span>A</span>
+                        <span class="btn-sub">決定/話す</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PC用キーボードガイド -->
+            <div class="pc-guide">
+                [PCキーボード操作]<br>
+                移動: <b>↑ ↓ ← →</b> または <b>W A S D</b><br>
+                決定・話す・調べる: <b>Enter</b> / <b>Space</b> / <b>Z</b><br>
+                キャンセル: <b>Esc</b> / <b>X</b>
+            </div>
+        </section>
+    </div>
+
+    <!-- ゲームスクリプト読み込み -->
+    <script src="js/audio.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/graphics.js"></script>
+    <script src="js/battle.js"></script>
+    <script src="js/main.js"></script>
+
+    <script>
+        function toggleMute() {
+            if (typeof audio !== 'undefined') {
+                audio.isMuted = !audio.isMuted;
+                if (audio.isMuted) {
+                    audio.stopBGM();
+                } else if (window.game && window.game.state === 'EXPLORE') {
+                    audio.playBGM(window.game.currentMap.bgm);
+                }
+                const btn = document.getElementById('soundToggle');
+                btn.textContent = audio.isMuted ? '🔇 サウンド: OFF' : '🔊 サウンド: ON';
+            }
+        }
+        // Service Workerの登録（PWA・オフライン対応）
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then((reg) => {
+                        console.log('[PWA] Service Worker registered successfully! Scope:', reg.scope);
+                    })
+                    .catch((err) => {
+                        console.error('[PWA] Service Worker registration failed:', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

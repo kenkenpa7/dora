@@ -1,0 +1,196 @@
+/* ドラクエ1風レトロRPG スタイルシート */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body {
+    background-color: #121216;
+    color: #ffffff;
+    font-family: 'Courier New', Courier, 'Hiragino Kaku Gothic ProN', Meiryo, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) calc(10px + env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) calc(10px + env(safe-area-inset-left, 0px));
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 520px;
+    width: 100%;
+}
+
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 0 4px;
+}
+
+.title-tag {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffcc00;
+    letter-spacing: 1px;
+}
+
+.sound-toggle-btn {
+    background: #2a2a36;
+    color: #ffffff;
+    border: 1px solid #555;
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.sound-toggle-btn:hover {
+    background: #3e3e50;
+}
+
+/* ゲーム画面 Canvas */
+.canvas-wrapper {
+    background: #000;
+    border: 4px solid #444455;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3.2;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* 操作説明 & バーチャルパッド (スマホ・タッチ対応) */
+.controls-container {
+    width: 100%;
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.virtual-pad {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: #1a1a24;
+    border-radius: 12px;
+    border: 1px solid #333344;
+}
+
+/* 十字キー */
+.dpad-container {
+    position: relative;
+    width: 130px;
+    height: 130px;
+}
+
+.pad-btn * , .action-btn * {
+    pointer-events: none;
+}
+
+.pad-btn {
+    position: absolute;
+    background: #2e2e40;
+    border: 2px solid #555577;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: 0 4px 0 #181822;
+}
+
+.pad-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #181822;
+    background: #444460;
+}
+
+.btn-up    { top: 0; left: 45px; width: 40px; height: 44px; }
+.btn-down  { bottom: 0; left: 45px; width: 40px; height: 44px; }
+.btn-left  { top: 45px; left: 0; width: 44px; height: 40px; }
+.btn-right { top: 45px; right: 0; width: 44px; height: 40px; }
+
+/* アクションボタン (A / B) */
+.action-buttons {
+    display: flex;
+    gap: 16px;
+}
+
+.action-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #555;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: 0 4px 0 #111;
+}
+
+.action-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #111;
+}
+
+.btn-a {
+    background: #cc2233;
+    color: #ffffff;
+    border-color: #ff5566;
+}
+.btn-a:active {
+    background: #ee3344;
+}
+
+.btn-b {
+    background: #3344aa;
+    color: #ffffff;
+    border-color: #5566dd;
+}
+.btn-b:active {
+    background: #4455cc;
+}
+
+.btn-sub {
+    font-size: 9px;
+    opacity: 0.8;
+}
+
+/* PC用操作ガイド */
+.pc-guide {
+    font-size: 11px;
+    color: #888899;
+    text-align: center;
+    line-height: 1.5;
+}

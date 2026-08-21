@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👾 モンスター図鑑 ＆ サイズ比較・編集ツール</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --accent-color: #58a6ff;
+            --text-color: #c9d1d9;
+            --gold-color: #f1e05a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .view-modes {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-mode {
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-mode.active {
+            background: var(--accent-color);
+            color: #ffffff;
+            border-color: var(--accent-color);
+        }
+
+        /* メインレイアウト */
+        .workspace {
+            display: grid;
+            grid-template-columns: 240px 500px 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 1. モンスター選択リスト */
+        .monster-list {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        .monster-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #21262d;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .monster-item:hover {
+            border-color: var(--accent-color);
+            background: #282e38;
+        }
+
+        .monster-item.active {
+            border-color: var(--accent-color);
+            background: rgba(88, 166, 255, 0.15);
+            color: #ffffff;
+        }
+
+        .monster-item .icon {
+            font-size: 1.2rem;
+        }
+
+        .monster-item .name {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .monster-item .stats {
+            font-size: 0.75rem;
+            color: #8b949e;
+            margin-left: auto;
+        }
+
+        /* 2. 戦闘画面プレビュー */
+        .preview-pane {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .screen-frame {
+            border: 4px solid #ffffff;
+            border-radius: 8px;
+            background: #000000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        .screen-info {
+            font-size: 0.85rem;
+            color: #8b949e;
+        }
+
+        /* 3. 調整パネル */
+        .control-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .control-value {
+            color: var(--gold-color);
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--accent-color);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px;
+            background: #238636;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #2ea043;
+        }
+
+        .btn-sub {
+            padding: 8px 12px;
+            background: #21262d;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .btn-sub:hover {
+            border-color: var(--accent-color);
+        }
+
+        .code-box {
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #58a6ff;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* 全比較モード */
+        .comparison-view {
+            display: none;
+            background: #000000;
+            border: 3px solid #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            overflow-x: auto;
+        }
+
+        .comparison-canvas-wrapper {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>👾 モンスター図鑑 ＆ 実戦サイズ編集プレビュー</h1>
+        <div class="view-modes">
+            <button id="btnSingleMode" class="btn-mode active" onclick="setMode('single')">⚔️ 実戦画面プレビュー</button>
+            <button id="btnCompareMode" class="btn-mode" onclick="setMode('compare')">📊 全モンスター並び比較</button>
+        </div>
+    </header>
+
+    <!-- 1. 実戦画面調整モード -->
+    <div id="singleWorkspace" class="workspace">
+        
+        <!-- 左: モンスター一覧 -->
+        <div class="monster-list" id="monsterListContainer"></div>
+
+        <!-- 中央: 戦闘画面プレビュー -->
+        <div class="preview-pane">
+            <div class="screen-frame">
+                <canvas id="previewCanvas" width="480" height="384"></canvas>
+            </div>
+            <div class="screen-info">実戦画面解像度: 480 × 384 px (アスペクト比 5:4)</div>
+        </div>
+
+        <!-- 右: サイズ・位置調整パネル -->
+        <div class="control-panel">
+            <div class="panel-title" id="currentMonsterTitle">スライム の調整</div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>表示サイズ (幅・高さ)</span>
+                    <span id="valSize" class="control-value">160 px</span>
+                </div>
+                <input type="range" id="sliderSize" min="60" max="360" step="5" value="160" oninput="updateParams()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>上下位置 (Y座標)</span>
+                    <span id="valY" class="control-value">75 px</span>
+                </div>
+                <input type="range" id="sliderY" min="10" max="200" step="2" value="75" oninput="updateParams()">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>左右位置 (X座標)</span>
+                    <span id="valX" class="control-value">中央 (自動)</span>
+                </div>
+                <input type="range" id="sliderX" min="20" max="340" step="2" value="160" oninput="updateParams()">
+                <button class="btn-sub" style="margin-top: 4px;" onclick="centerMonster()">📍 左右中央に合わせる</button>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>背景モード</span>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-sub" onclick="setBg('black')">⬛ 通常黒</button>
+                    <button class="btn-sub" onclick="setBg('field')">🌿 草原</button>
+                    <button class="btn-sub" onclick="setBg('dungeon')">🔥 洞窟</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>設定用コード (コピーして本体へ反映)</span>
+                </div>
+                <div id="codeOutput" class="code-box">size: 160, y: 75</div>
+                <button class="btn-action" onclick="copyCode()">📋 設定をコピーする</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 全モンスター並び比較モード -->
+    <div id="compareWorkspace" class="comparison-view">
+        <div style="color: #f1e05a; font-weight: bold; margin-bottom: 12px; text-align: center;">
+            📊 全モンスター スケール比較（小型〜大型の迫力対比）
+        </div>
+        <div class="comparison-canvas-wrapper">
+            <canvas id="compareCanvas" width="960" height="300"></canvas>
+        </div>
+    </div>
+
+    <!-- ゲーム本体のスクリプト読み込み -->
+    <script src="js/data.js"></script>
+    <script src="js/graphics.js"></script>
+
+    <script>
+        // モンスターごとのデフォルト設定
+        const monsterConfigs = {
+            slime:    { size: 60,  y: 130, autoX: false, x: 250, icon: '💧', desc: '小型・最序盤モンスター' },
+            dracky:   { size: 225, y: 72,  autoX: false, x: 196, icon: '🦇', desc: '飛行型モンスター' },
+            skeleton: { size: 290, y: 46,  autoX: false, x: 146, icon: '💀', desc: '中型アンデッド' },
+            wizard:   { size: 360, y: 44,  autoX: false, x: 116, icon: '🧙', desc: '呪文使いモンスター' },
+            golem:    { size: 315, y: 16,  autoX: false, x: 162, icon: '🗿', desc: '大型岩石モンスター' },
+            dragon:   { size: 290, y: 52,  autoX: false, x: 166, icon: '🐲', desc: '超大型ボスドラゴン' }
+        };
+
+        let selectedId = 'slime';
+        let currentMode = 'single';
+        let bgMode = 'black';
+        let animTick = 0;
+
+        // UI初期化
+        function initUI() {
+            const listContainer = document.getElementById('monsterListContainer');
+            listContainer.innerHTML = '';
+
+            for (const id of Object.keys(monsterConfigs)) {
+                const enemy = ENEMIES[id] || { name: id, maxHp: '??' };
+                const cfg = monsterConfigs[id];
+
+                const item = document.createElement('div');
+                item.className = `monster-item ${id === selectedId ? 'active' : ''}`;
+                item.id = `item_${id}`;
+                item.onclick = () => selectMonster(id);
+
+                item.innerHTML = `
+                    <span class="icon">${cfg.icon}</span>
+                    <div>
+                        <div class="name">${enemy.name}</div>
+                        <div style="font-size: 0.75rem; color: #8b949e;">${cfg.desc}</div>
+                    </div>
+                    <div class="stats">HP: ${enemy.maxHp}</div>
+                `;
+                listContainer.appendChild(item);
+            }
+
+            selectMonster('slime');
+            requestAnimationFrame(renderLoop);
+        }
+
+        function selectMonster(id) {
+            selectedId = id;
+            document.querySelectorAll('.monster-item').forEach(el => el.classList.remove('active'));
+            const activeEl = document.getElementById(`item_${id}`);
+            if (activeEl) activeEl.classList.add('active');
+
+            const cfg = monsterConfigs[id];
+            const enemy = ENEMIES[id] || { name: id };
+
+            document.getElementById('currentMonsterTitle').innerText = `${enemy.name} のサイズ調整`;
+            document.getElementById('sliderSize').value = cfg.size;
+            document.getElementById('sliderY').value = cfg.y;
+            document.getElementById('sliderX').value = cfg.x;
+
+            updateLabels();
+        }
+
+        function updateParams() {
+            const cfg = monsterConfigs[selectedId];
+            cfg.size = parseInt(document.getElementById('sliderSize').value);
+            cfg.y = parseInt(document.getElementById('sliderY').value);
+            cfg.x = parseInt(document.getElementById('sliderX').value);
+            cfg.autoX = false;
+            updateLabels();
+        }
+
+        function centerMonster() {
+            const cfg = monsterConfigs[selectedId];
+            cfg.x = Math.round((480 - cfg.size) / 2);
+            cfg.autoX = true;
+            document.getElementById('sliderX').value = cfg.x;
+            updateLabels();
+        }
+
+        function updateLabels() {
+            const cfg = monsterConfigs[selectedId];
+            document.getElementById('valSize').innerText = `${cfg.size} px`;
+            document.getElementById('valY').innerText = `${cfg.y} px`;
+            document.getElementById('valX').innerText = cfg.autoX ? '中央 (自動)' : `${cfg.x} px`;
+
+            const enemy = ENEMIES[selectedId] || { name: selectedId };
+            document.getElementById('codeOutput').innerText = 
+`// ${enemy.name} の表示設定
+${selectedId}: {
+    size: ${cfg.size},
+    y: ${cfg.y},
+    x: ${cfg.x}
+}`;
+        }
+
+        function setBg(type) {
+            bgMode = type;
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btnSingleMode').className = `btn-mode ${mode === 'single' ? 'active' : ''}`;
+            document.getElementById('btnCompareMode').className = `btn-mode ${mode === 'compare' ? 'active' : ''}`;
+
+            document.getElementById('singleWorkspace').style.display = mode === 'single' ? 'grid' : 'none';
+            document.getElementById('compareWorkspace').style.display = mode === 'compare' ? 'block' : 'none';
+        }
+
+        function copyCode() {
+            const text = document.getElementById('codeOutput').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('📋 設定コードをコピーしました！本体に反映できます。');
+            });
+        }
+
+        // 描画ループ
+        function renderLoop() {
+            animTick++;
+
+            if (currentMode === 'single') {
+                renderSinglePreview();
+            } else {
+                renderCompareView();
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        function renderSinglePreview() {
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            // 背景描画
+            if (bgMode === 'black') {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 480, 384);
+            } else if (bgMode === 'field') {
+                ctx.fillStyle = '#1e3f20';
+                ctx.fillRect(0, 0, 480, 384);
+            } else if (bgMode === 'dungeon') {
+                ctx.fillStyle = '#221111';
+                ctx.fillRect(0, 0, 480, 384);
+            }
+
+            // モンスター描画
+            const cfg = monsterConfigs[selectedId];
+            const enemy = ENEMIES[selectedId];
+
+            if (enemy) {
+                // 呼吸アニメーション (浮遊/呼吸)
+                let floatY = 0;
+                if (selectedId === 'dracky') {
+                    floatY = Math.sin(animTick * 0.08) * 8; // 羽ばたき
+                } else if (selectedId === 'slime') {
+                    floatY = Math.sin(animTick * 0.06) * 3; // ぷるぷる
+                } else if (selectedId === 'dragon') {
+                    floatY = Math.sin(animTick * 0.04) * 4; // 威圧感
+                }
+
+                const posX = cfg.autoX ? Math.round((480 - cfg.size) / 2) : cfg.x;
+                const posY = cfg.y + floatY;
+
+                gfx.drawMonster(ctx, enemy.sprite || selectedId, posX, posY, cfg.size);
+            }
+
+            // 戦闘ウィンドウ (実戦UIのシミュレーション)
+            // ステータス枠
+            gfx.drawWindow(ctx, 16, 16, 140, 110);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 15px monospace';
+            ctx.fillText('ゆうしゃ', 32, 42);
+            ctx.fillText('LV  5', 32, 66);
+            ctx.fillText('HP 38/38', 32, 90);
+            ctx.fillText('MP 12/12', 32, 114);
+
+            // コマンド枠
+            gfx.drawWindow(ctx, 290, 240, 174, 128);
+            ctx.fillText('たたかう', 324, 276);
+            ctx.fillText('じゅもん', 324, 304);
+            ctx.fillText('にげる',   324, 332);
+            ctx.fillText('どうぐ',   324, 360);
+
+            // メッセージ枠
+            gfx.drawWindow(ctx, 16, 240, 260, 128);
+            ctx.fillText(`${enemy ? enemy.name : selectedId}が`, 36, 280);
+            ctx.fillText('あらわれた！', 36, 310);
+        }
+
+        function renderCompareView() {
+            const canvas = document.getElementById('compareCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 960, 300);
+
+            // 地面ガイドライン
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, 240);
+            ctx.lineTo(960, 240);
+            ctx.stroke();
+
+            const monsterOrder = ['slime', 'dracky', 'skeleton', 'wizard', 'golem', 'dragon'];
+            let currentX = 30;
+
+            monsterOrder.forEach((id) => {
+                const enemy = ENEMIES[id];
+                const cfg = monsterConfigs[id];
+                if (!enemy || !cfg) return;
+
+                // 地面(Y=240)に合わせて足元接地で描画
+                const size = cfg.size * 0.75; // 比較用に少し縮小
+                const posY = 230 - size;
+
+                gfx.drawMonster(ctx, enemy.sprite || id, currentX, posY, size);
+
+                // ラベル
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(enemy.name, currentX + size / 2, 265);
+                ctx.fillStyle = '#8b949e';
+                ctx.font = '11px monospace';
+                ctx.fillText(`${cfg.size}px`, currentX + size / 2, 285);
+                ctx.textAlign = 'left';
+
+                currentX += size + 25;
+            });
+        }
+
+        window.onload = () => {
+            initUI();
+        };
+    </script>
+</body>
+</html>
