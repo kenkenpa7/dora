@@ -3,103 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎼 戦闘曲 (battle) ハイエンド・プログラミング再現 ＆ 聴き比べシアター</title>
+    <title>🎻 戦闘曲 (battle) オーケストラ音響物理モデリング再現シアター</title>
     <style>
         :root {
-            --bg-color: #080c14;
-            --card-bg: #121824;
-            --border-color: #1f293d;
-            --accent: #ff4757;
-            --gold: #ffa502;
-            --blue: #1e90ff;
-            --green: #2ed573;
-            --purple: #a855f7;
-            --cyan: #00d2d3;
-            --text: #e2e8f0;
-            --text-dim: #8a99ad;
+            --bg-color: #060911;
+            --card-bg: #0f1422;
+            --border-color: #1a2336;
+            --gold: #f59e0b;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --emerald: #10b981;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif; }
-        body { background: var(--bg-color); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { max-width: 900px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        body { background: var(--bg-color); color: var(--text); padding: 24px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { max-width: 880px; width: 100%; display: flex; flex-direction: column; gap: 22px; }
         
         header { text-align: center; border-bottom: 2px solid var(--border-color); padding-bottom: 16px; }
-        h1 { color: #ffffff; font-size: 1.55rem; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        h1 { color: #ffffff; font-size: 1.55rem; margin-bottom: 8px; }
         .subtitle { font-size: 0.95rem; color: var(--text-dim); }
 
-        /* 3方式 比較カード */
-        .comparison-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 14px;
-        }
-        @media (max-width: 768px) {
-            .comparison-grid { grid-template-columns: 1fr; }
-        }
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
 
-        .engine-card {
+        .card {
             background: var(--card-bg);
             border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 18px;
+            border-radius: 14px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            position: relative;
-            transition: 0.2s;
+            gap: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
-        .engine-card:hover { transform: translateY(-2px); }
-        .engine-card.featured { border-color: var(--cyan); box-shadow: 0 0 20px rgba(0, 210, 211, 0.2); }
-        .engine-card.retro { border-color: var(--green); }
-        .engine-card.mp3 { border-color: var(--blue); }
+        .card.orch { border-color: var(--gold); box-shadow: 0 0 25px rgba(245, 158, 11, 0.15); }
+        .card.mp3 { border-color: var(--blue); }
 
-        .tag-row { display: flex; justify-content: space-between; align-items: center; }
-        .tag-title { font-size: 1.05rem; font-weight: bold; }
-        .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; font-weight: bold; }
-        .badge-cyan { background: rgba(0, 210, 211, 0.2); color: var(--cyan); border: 1px solid var(--cyan); }
-        .badge-green { background: rgba(46, 213, 115, 0.2); color: var(--green); border: 1px solid var(--green); }
-        .badge-blue { background: rgba(30, 144, 255, 0.2); color: var(--blue); border: 1px solid var(--blue); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 1.15rem; font-weight: bold; }
+        .badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: bold; }
+        .badge-gold { background: rgba(245, 158, 11, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+        .badge-blue { background: rgba(59, 130, 246, 0.2); color: var(--blue); border: 1px solid var(--blue); }
 
-        .desc-text { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; min-height: 48px; }
+        .desc-box { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; min-height: 52px; }
 
         .btn-play {
             border: none;
-            padding: 14px;
-            font-size: 0.95rem;
+            padding: 16px;
+            font-size: 1.05rem;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             transition: 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
             color: #ffffff;
         }
-        .btn-cyan { background: #008f91; }
-        .btn-cyan:hover { background: #00a8aa; }
-        .btn-cyan.playing { background: #da3633; }
-        .btn-green { background: #238636; }
-        .btn-green:hover { background: #2ea043; }
-        .btn-green.playing { background: #da3633; }
-        .btn-blue { background: #1f6feb; }
-        .btn-blue:hover { background: #388bfd; }
-        .btn-blue.playing { background: #da3633; }
+        .btn-orch { background: #d97706; }
+        .btn-orch:hover { background: #f59e0b; transform: scale(1.01); }
+        .btn-orch.playing { background: #ef4444; }
+        .btn-mp3 { background: #2563eb; }
+        .btn-mp3:hover { background: #3b82f6; transform: scale(1.01); }
+        .btn-mp3.playing { background: #ef4444; }
 
-        .specs-list {
-            font-size: 0.78rem;
+        .specs-grid {
+            background: #080b12;
+            border-radius: 8px;
+            padding: 12px 14px;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            background: #090d15;
-            padding: 10px;
-            border-radius: 6px;
+            font-size: 0.8rem;
             color: var(--text-dim);
         }
-        .specs-item { display: flex; justify-content: space-between; }
-        .specs-val { color: #ffffff; font-weight: bold; }
+        .spec-row { display: flex; justify-content: space-between; }
+        .spec-val { font-weight: bold; color: #ffffff; }
 
-        /* 波形ビジュアライザー */
-        .visualizer-card {
+        .vis-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
@@ -108,11 +91,10 @@
             flex-direction: column;
             gap: 10px;
         }
-        .vis-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); }
         .visualizer {
-            height: 80px;
+            height: 90px;
             background: #000000;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid var(--border-color);
             overflow: hidden;
         }
@@ -120,96 +102,70 @@
 
         .note-box {
             font-size: 0.85rem;
-            background: rgba(0, 210, 211, 0.08);
-            border-left: 4px solid var(--cyan);
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--gold);
             padding: 14px 18px;
             border-radius: 0 8px 8px 0;
             line-height: 1.7;
         }
-        .note-box b { color: #ffffff; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>⚔️ 戦闘曲 (battle) 3方式 徹底聴き比べシアター</h1>
-            <div class="subtitle">新次元の「ハイエンド・プログラム合成」 vs 「レトロ4ch」 vs 「MP3録音」</div>
+            <h1>🎻 戦闘曲 (battle) オーケストラ音響物理モデリング再現</h1>
+            <div class="subtitle">レトロ電子音ではなく「生オーケストラの楽器（ブラス・弦楽・ティンパニ）」をコードで物理再現</div>
         </header>
 
-        <!-- 3者比較グリッド -->
-        <div class="comparison-grid">
-            <!-- 1. 新開発: ハイエンド・プログラム合成 -->
-            <div class="engine-card featured">
-                <div class="tag-row">
-                    <span class="tag-title" style="color: var(--cyan);">✨ ① ハイエンド合成</span>
-                    <span class="badge badge-cyan">超軽量 3.4 KB</span>
+        <div class="compare-grid">
+            <!-- 1. オーケストラ物理モデリング合成 -->
+            <div class="card orch">
+                <div class="card-header">
+                    <span class="card-title" style="color: var(--gold);">🎻 A. オーケストラ物理合成 (コード生成)</span>
+                    <span class="badge badge-gold">超極小 3.9 KB</span>
                 </div>
-                <div class="desc-text">
-                    <b>技術の粋をフル投入！</b><br>
-                    極太デチューンブラス、うねるFMスラップベース、空間ステレオリバーブ、音圧コンプレッサーをコードでリアルタイム演算。
+                <div class="desc-box">
+                    <b>元曲のアコースティック響きを徹底再現！</b><br>
+                    金管ブラス隊のリップ倍音、弦楽ストリングス合奏のビブラート、ティンパニの胴鳴り、大ホールの残響（リバーブ）をすべてリアルタイム計算。
                 </div>
-                <button id="btnHighend" class="btn-play btn-cyan" onclick="toggleHighend()">
-                    ▶ ハイエンド合成 を再生
+                <button id="btnOrch" class="btn-play btn-orch" onclick="toggleOrch()">
+                    ▶ オーケストラ合成版 を再生
                 </button>
-                <div class="specs-list">
-                    <div class="specs-item"><span>音源容量:</span><span class="specs-val" style="color: var(--cyan);">わずか 3.4 KB</span></div>
-                    <div class="specs-item"><span>音色構造:</span><span class="specs-val">8ch 減算＋FM合成</span></div>
-                    <div class="specs-item"><span>空間エフェクト:</span><span class="specs-val">ステレオリバーブ+パン</span></div>
-                    <div class="specs-item"><span>音圧マスタリング:</span><span class="specs-val">ダイナミクスコンプ</span></div>
-                    <div class="specs-item"><span>ファイル読込:</span><span class="specs-val" style="color: var(--green);">0 秒 (通信量ゼロ)</span></div>
+                <div class="specs-grid">
+                    <div class="spec-row"><span>データ容量:</span><span class="spec-val" style="color: var(--gold);">わずか 3.9 KB</span></div>
+                    <div class="spec-row"><span>楽器編成:</span><span class="spec-val">金管隊 + 弦楽 + ティンパニ + 小太鼓</span></div>
+                    <div class="spec-row"><span>音響モデリング:</span><span class="spec-val">倍音加算合成 + フォルマント</span></div>
+                    <div class="spec-row"><span>空間残響:</span><span class="spec-val">大ホール多段リバーブ</span></div>
+                    <div class="spec-row"><span>ファイル読込:</span><span class="spec-val" style="color: var(--emerald);">0 秒 / 0 バイト</span></div>
                 </div>
             </div>
 
-            <!-- 2. ファミコン4ch レトロ合成 -->
-            <div class="engine-card retro">
-                <div class="tag-row">
-                    <span class="tag-title" style="color: var(--green);">👾 ② レトロ4ch合成</span>
-                    <span class="badge badge-green">超軽量 2.2 KB</span>
-                </div>
-                <div class="desc-text">
-                    <b>ファミコン実機の忠実再現！</b><br>
-                    矩形波2音＋三角波1音＋ノイズ1音のみのピコピコした懐かしい8bitサウンド。
-                </div>
-                <button id="btnRetro" class="btn-play btn-green" onclick="toggleRetro()">
-                    ▶ レトロ4ch を再生
-                </button>
-                <div class="specs-list">
-                    <div class="specs-item"><span>音源容量:</span><span class="specs-val" style="color: var(--green);">わずか 2.2 KB</span></div>
-                    <div class="specs-item"><span>音色構造:</span><span class="specs-val">ファミコン 4ch</span></div>
-                    <div class="specs-item"><span>空間エフェクト:</span><span class="specs-val">モノラル (なし)</span></div>
-                    <div class="specs-item"><span>音圧マスタリング:</span><span class="specs-val">なし</span></div>
-                    <div class="specs-item"><span>ファイル読込:</span><span class="specs-val" style="color: var(--green);">0 秒 (通信量ゼロ)</span></div>
-                </div>
-            </div>
-
-            <!-- 3. MP3録音ファイル -->
-            <div class="engine-card mp3">
-                <div class="tag-row">
-                    <span class="tag-title" style="color: var(--blue);">🎵 ③ MP3録音ファイル</span>
+            <!-- 2. MP3録音音源 -->
+            <div class="card mp3">
+                <div class="card-header">
+                    <span class="card-title" style="color: var(--blue);">🎵 B. 既存のMP3録音ファイル</span>
                     <span class="badge badge-blue">容量 240.9 KB</span>
                 </div>
-                <div class="desc-text">
-                    <b>既存の録音音源！</b><br>
-                    外部シンセサイザーで録音された音源を64kbps MP3に圧縮したファイル。
+                <div class="desc-box">
+                    <b>目標とした元音源！</b><br>
+                    外部音源で録音されたオリジナルのMP3ファイル（64kbps圧縮版）。
                 </div>
-                <button id="btnMp3" class="btn-play btn-blue" onclick="toggleMp3()">
-                    ▶ MP3録音版 を再生
+                <button id="btnMp3" class="btn-play btn-mp3" onclick="toggleMp3()">
+                    ▶ 既存の MP3版 を再生
                 </button>
-                <div class="specs-list">
-                    <div class="specs-item"><span>音源容量:</span><span class="specs-val">240.9 KB (約70倍)</span></div>
-                    <div class="specs-item"><span>音色構造:</span><span class="specs-val">MP3 64kbps</span></div>
-                    <div class="specs-item"><span>空間エフェクト:</span><span class="specs-val">固定ステレオ録音</span></div>
-                    <div class="specs-item"><span>音圧マスタリング:</span><span class="specs-val">録音済み</span></div>
-                    <div class="specs-item"><span>ファイル読込:</span><span class="specs-val">要ダウンロード</span></div>
+                <div class="specs-grid">
+                    <div class="spec-row"><span>データ容量:</span><span class="spec-val">240.9 KB (約60倍)</span></div>
+                    <div class="spec-row"><span>ファイル名:</span><span class="spec-val">battle.mp3</span></div>
+                    <div class="spec-row"><span>形式:</span><span class="spec-val">MP3 (64 kbps Stereo)</span></div>
+                    <div class="spec-row"><span>ファイル読込:</span><span class="spec-val">ダウンロード必要</span></div>
                 </div>
             </div>
         </div>
 
-        <!-- リアルタイム・オシロスコープ＆周波数アナライザー -->
-        <div class="visualizer-card">
-            <div class="vis-header">
-                <span>📊 リアルタイム周波数 ＆ サウンド波形アナライザー</span>
-                <span id="visStatus" style="color: var(--cyan);">待機中</span>
+        <div class="vis-card">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim);">
+                <span>📊 リアルタイム周波数 ＆ サラウンド波形</span>
+                <span id="visStatus" style="color: var(--gold);">待機中</span>
             </div>
             <div class="visualizer">
                 <canvas id="canvasVis"></canvas>
@@ -217,35 +173,64 @@
         </div>
 
         <div class="note-box">
-            💡 <b>技術的な解説（ハイエンド合成の秘密）:</b><br>
-            ・<b>リードブラス（主旋律）</b>: のこぎり波を音程をわずかにズラして2本重ね（デチューン）、立ち上がりにフィルター（Cutoff 2400Hz ➡ 800Hz）を開くことで、オーケストラのトランペット隊のような厚みを出しています。<br>
-            ・<b>スラップベース（重低音）</b>: アタック時に「カチッ」とした高域クリック音と三角波の重低音をブレンドし、うねるグルーヴを再現。<br>
-            ・<b>空間音響</b>: 左右に音を散らすステレオパンニングと、微細なステレオディレイ（残響）をJavaScriptで直接計算してリアルタイム付加しています。
+            💡 <b>オーケストラ音響合成（プログラミング）のポイント:</b><br>
+            ・<b>金管ブラスセクション</b>: サイン波＋ノコギリ波の倍音をブレンドし、リップアタック（発音瞬間のブレス感）とフォルマントフィルター（1.4kHz）で本物のトランペット・トロンボーンの温かい肉声感を再現。<br>
+            ・<b>弦楽ストリングス合奏</b>: 左右にパンした複数オシレーターに繊細なLFOビブラート（5.5Hz）をかけ、広大なオーケストラピットの弦のうねりを表現。<br>
+            ・<b>ティンパニ＆パーカッション</b>: 音程が急降下する胴鳴りサイン波＋フェルトばちのアタックノイズで、ド迫力の打楽器打撃音を合成しています。
         </div>
     </div>
 
     <script>
         let audioCtx = null;
-        let activeMode = null; // 'highend', 'retro', 'mp3'
+        let isOrchPlaying = false;
+        let isMp3Playing = false;
         let synthTimer = null;
         let currentStep = 0;
         let mp3Audio = null;
         let analyser = null;
         let masterComp = null;
-        let masterReverb = null;
+        let reverbGain = null;
 
         function initAudio() {
             if (!audioCtx) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 audioCtx = new AudioContext();
-                
-                // マスタリング・ダイナミクスコンプレッサー (音圧を引き締め)
+
+                // マスタリングコンプレッサー
                 masterComp = audioCtx.createDynamicsCompressor();
-                masterComp.threshold.setValueAtTime(-18, audioCtx.currentTime);
-                masterComp.knee.setValueAtTime(12, audioCtx.currentTime);
-                masterComp.ratio.setValueAtTime(4, audioCtx.currentTime);
-                masterComp.attack.setValueAtTime(0.003, audioCtx.currentTime);
-                masterComp.release.setValueAtTime(0.15, audioCtx.currentTime);
+                masterComp.threshold.setValueAtTime(-14, audioCtx.currentTime);
+                masterComp.knee.setValueAtTime(10, audioCtx.currentTime);
+                masterComp.ratio.setValueAtTime(3.5, audioCtx.currentTime);
+                masterComp.attack.setValueAtTime(0.005, audioCtx.currentTime);
+                masterComp.release.setValueAtTime(0.12, audioCtx.currentTime);
+
+                // 大ホール空間リバーブ (フィードバック・ディレイネットワーク)
+                const delayL = audioCtx.createDelay();
+                const delayR = audioCtx.createDelay();
+                delayL.delayTime.value = 0.085;
+                delayR.delayTime.value = 0.115;
+
+                const feedbackL = audioCtx.createGain();
+                const feedbackR = audioCtx.createGain();
+                feedbackL.gain.value = 0.28;
+                feedbackR.gain.value = 0.28;
+
+                const revFilter = audioCtx.createBiquadFilter();
+                revFilter.type = 'lowpass';
+                revFilter.frequency.value = 2400; // 高域が自然に減衰するホールの壁反射
+
+                reverbGain = audioCtx.createGain();
+                reverbGain.gain.value = 0.35;
+
+                delayL.connect(feedbackL);
+                feedbackL.connect(delayR);
+                delayR.connect(feedbackR);
+                feedbackR.connect(delayL);
+
+                delayL.connect(revFilter);
+                delayR.connect(revFilter);
+                revFilter.connect(reverbGain);
+                reverbGain.connect(masterComp);
 
                 analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 128;
@@ -258,12 +243,10 @@
             }
         }
 
-        // ノート番号 -> 周波数変換
         function mtof(midi) {
             return midi > 0 ? 440 * Math.pow(2, (midi - 69) / 12) : 0;
         }
 
-        // ノート定数
         const N = {
             C2: 36, D2: 38, Eb2: 39, E2: 40, F2: 41, Fs2: 42, G2: 43, Ab2: 44, A2: 45, Bb2: 46, B2: 47,
             C3: 48, D3: 50, Eb3: 51, E3: 52, F3: 53, Fs3: 54, G3: 55, Ab3: 56, A3: 57, Bb3: 58, B3: 59,
@@ -272,26 +255,26 @@
             C6: 84, D6: 86, Eb6: 87, E6: 88, F6: 89, G6: 91, _: 0
         };
 
-        // 戦闘曲 (battle) 楽譜シーケンス (BPM 156)
-        const battle_ch1 = [
+        // 戦闘曲楽譜
+        const melody_notes = [
             N.D4, N.D4, N.D4, N.F4, N.G4, N.Ab4, N.A4, N._, N.A4, N.G4, N.F4, N.E4, N.D4, N.C4, N.D4, N.E4,
             N.F4, N.G4, N.A4, N.C5, N.D5, N._, N.D5, N._, N.C5, N.A4, N.F4, N.E4, N.D4, N._, N._, N._,
             N.Bb4, N._, N.Bb4, N.C5, N.D5, N._, N.D5, N.E5, N.F5, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.A4,
             N.A4, N._, N.A4, N.Bb4, N.C5, N._, N.C5, N.D5, N.E5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4
         ];
-        const battle_ch2 = [
+        const harmony_notes = [
             N.A3, N.A3, N.A3, N.D4, N.E4, N.F4, N.F4, N._, N.F4, N.E4, N.D4, N.C4, N.A3, N.G3, N.A3, N.C4,
             N.D4, N.E4, N.F4, N.A4, N.Bb4, N._, N.Bb4, N._, N.A4, N.F4, N.D4, N.C4, N.A3, N._, N._, N._,
             N.G4, N._, N.G4, N.A4, N.Bb4, N._, N.Bb4, N.C5, N.D5, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.F4,
             N.F4, N._, N.F4, N.G4, N.A4, N._, N.A4, N.Bb4, N.C5, N.Bb4, N.A4, N.G4, N.F4, N.E4, N.D4, N.C4
         ];
-        const battle_bass = [
-            N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2,
-            N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.D3, N.D2, N.A2, N.A1, N.A2, N.A1, N.D3, N.D2, N.D3, N.D2,
-            N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.Bb2, N.Bb1, N.G2, N.G1, N.G2, N.G1, N.C3, N.C2, N.C3, N.C2,
-            N.F2, N.F1, N.F2, N.F1, N.F2, N.F1, N.F2, N.F1, N.A2, N.A1, N.A2, N.A1, N.A2, N.A1, N.A2, N.A1
+        const bass_notes = [
+            N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2,
+            N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.D2, N.A1, N.A1, N.A1, N.A1, N.D2, N.D2, N.D2, N.D2,
+            N.Bb1, N.Bb1, N.Bb1, N.Bb1, N.Bb1, N.Bb1, N.Bb1, N.Bb1, N.G1, N.G1, N.G1, N.G1, N.C2, N.C2, N.C2, N.C2,
+            N.F1, N.F1, N.F1, N.F1, N.F1, N.F1, N.F1, N.F1, N.A1, N.A1, N.A1, N.A1, N.A1, N.A1, N.A1, N.A1
         ];
-        const battle_drums = [
+        const drum_notes = [
             1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
             1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
             1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3, 1, 3, 2, 3,
@@ -299,152 +282,198 @@
         ];
 
         // ==========================================
-        // 1. ✨ ハイエンド合成エンジン (Web Audio DSP)
+        // 🎻 オーケストラ物理モデリング合成エンジン
         // ==========================================
-        function playStepHighend() {
-            if (activeMode !== 'highend') return;
+        function playStepOrch() {
+            if (!isOrchPlaying) return;
             const now = audioCtx.currentTime;
-            const stepDur = (60 / 156) / 4; // 約 0.096 秒
-            const idx = currentStep % battle_ch1.length;
+            const stepDur = (60 / 156) / 4; // 約 0.096秒
+            const idx = currentStep % melody_notes.length;
 
-            // ① リードブラス (Sawtooth x 2重デチューン + ローパスフィルター + Pan: -0.15)
-            const n1 = battle_ch1[idx];
+            // ① オーケストラ・金管ブラス隊 (ホルン+トランペット合成)
+            const n1 = melody_notes[idx];
             if (n1 && n1 > 0) {
-                const freq = mtof(n1);
-                
-                // オシレータ1 (主)
-                const osc1 = audioCtx.createOscillator();
-                osc1.type = 'sawtooth';
-                osc1.frequency.setValueAtTime(freq, now);
-
-                // オシレータ2 (デチューン +5cent で厚みを倍増)
-                const osc2 = audioCtx.createOscillator();
-                osc2.type = 'sawtooth';
-                osc2.frequency.setValueAtTime(freq, now);
-                osc2.detune.setValueAtTime(8, now);
-
-                // ダイナミック・フィルター (アタックで開いて閉じる金管特有の音色)
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(3200, now);
-                filter.frequency.exponentialRampToValueAtTime(1100, now + stepDur * 0.9);
-
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.14, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.95);
-
-                const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-                if (panner) panner.pan.setValueAtTime(-0.15, now);
-
-                osc1.connect(filter);
-                osc2.connect(filter);
-                filter.connect(gain);
-                if (panner) {
-                    gain.connect(panner);
-                    panner.connect(masterComp);
-                } else {
-                    gain.connect(masterComp);
-                }
-
-                osc1.start(now);
-                osc2.start(now);
-                osc1.stop(now + stepDur * 0.95);
-                osc2.stop(now + stepDur * 0.95);
+                playOrchestralBrass(n1, now, stepDur * 0.95, -0.15);
             }
 
-            // ② カウンターストリングス (パルス波 + Pan: +0.25)
-            const n2 = battle_ch2[idx];
+            // ② オーケストラ・ストリングス合奏 (バイオリン+ビオラ)
+            const n2 = harmony_notes[idx];
             if (n2 && n2 > 0) {
-                const freq = mtof(n2);
-                const osc = audioCtx.createOscillator();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(freq, now);
-
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(1800, now);
-
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.09, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.88);
-
-                const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-                if (panner) panner.pan.setValueAtTime(0.25, now);
-
-                osc.connect(filter);
-                filter.connect(gain);
-                if (panner) {
-                    gain.connect(panner);
-                    panner.connect(masterComp);
-                } else {
-                    gain.connect(masterComp);
-                }
-
-                osc.start(now);
-                osc.stop(now + stepDur * 0.9);
+                playOrchestralStrings(n2, now, stepDur * 0.92, 0.20);
             }
 
-            // ③ 極太スラップベース (Sawtooth + Triangle + レゾナンスフィルター)
-            const n3 = battle_bass[idx];
+            // ③ コントラバス＆チェロ (重低音・弦擦音)
+            const n3 = bass_notes[idx];
             if (n3 && n3 > 0) {
-                const freq = mtof(n3);
-                
-                const oscSaw = audioCtx.createOscillator();
-                oscSaw.type = 'sawtooth';
-                oscSaw.frequency.setValueAtTime(freq, now);
-
-                const oscTri = audioCtx.createOscillator();
-                oscTri.type = 'triangle';
-                oscTri.frequency.setValueAtTime(freq, now);
-
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.Q.setValueAtTime(4, now); // レゾナンスでアタックを強調
-                filter.frequency.setValueAtTime(1600, now);
-                filter.frequency.exponentialRampToValueAtTime(280, now + stepDur * 0.6);
-
-                const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.28, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.98);
-
-                oscSaw.connect(filter);
-                oscTri.connect(filter);
-                filter.connect(gain);
-                gain.connect(masterComp);
-
-                oscSaw.start(now);
-                oscTri.start(now);
-                oscSaw.stop(now + stepDur);
-                oscTri.stop(now + stepDur);
+                playOrchestralBass(n3, now, stepDur * 0.98);
             }
 
-            // ④ ステレオドラムセット (Kick, Snare, Hihat)
-            const drum = battle_drums[idx];
+            // ④ ティンパニ ＆ 小太鼓ロール
+            const drum = drum_notes[idx];
             if (drum && drum > 0) {
-                playHighendDrums(drum, now, stepDur);
+                playOrchestralPercussion(drum, now, stepDur);
             }
 
             currentStep++;
-            synthTimer = setTimeout(playStepHighend, stepDur * 1000);
+            synthTimer = setTimeout(playStepOrch, stepDur * 1000);
         }
 
-        // ハイエンドドラム合成
-        function playHighendDrums(type, time, stepDur) {
-            if (type === 1) { // 迫力サイン波キック (150Hz -> 30Hz ピッチベンド)
+        // 金管ブラス物理合成 (基音+倍音+リップアタック+フォルマント)
+        function playOrchestralBrass(midi, time, dur, pan) {
+            const freq = mtof(midi);
+
+            // 基音 (温かみのある三角波+サイン波)
+            const oscFund = audioCtx.createOscillator();
+            oscFund.type = 'triangle';
+            oscFund.frequency.setValueAtTime(freq, time);
+
+            // 倍音 (金管の鋭さを生むノコギリ波)
+            const oscSaw = audioCtx.createOscillator();
+            oscSaw.type = 'sawtooth';
+            oscSaw.frequency.setValueAtTime(freq, time);
+            oscSaw.detune.setValueAtTime(4, time);
+
+            // フォルマントフィルター (1400Hz ブラス共鳴)
+            const formant = audioCtx.createBiquadFilter();
+            formant.type = 'bandpass';
+            formant.frequency.setValueAtTime(1450, time);
+            formant.Q.setValueAtTime(1.8, time);
+
+            const mainFilter = audioCtx.createBiquadFilter();
+            mainFilter.type = 'lowpass';
+            mainFilter.frequency.setValueAtTime(2600, time);
+            mainFilter.frequency.exponentialRampToValueAtTime(1200, time + dur);
+
+            const gain = audioCtx.createGain();
+            // リップアタック (発音瞬間に音がグッと立ち上がる)
+            gain.gain.setValueAtTime(0.001, time);
+            gain.gain.linearRampToValueAtTime(0.18, time + 0.025);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+
+            const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+            if (panner) panner.pan.setValueAtTime(pan, time);
+
+            oscFund.connect(mainFilter);
+            oscSaw.connect(formant);
+            formant.connect(mainFilter);
+            mainFilter.connect(gain);
+
+            const dest = panner || masterComp;
+            if (panner) { gain.connect(panner); panner.connect(masterComp); }
+            else { gain.connect(masterComp); }
+
+            // 残響センド
+            gain.connect(reverbGain);
+
+            oscFund.start(time);
+            oscSaw.start(time);
+            oscFund.stop(time + dur);
+            oscSaw.stop(time + dur);
+        }
+
+        // ストリングス弦楽合奏 (複数音オシレーター+ビブラート)
+        function playOrchestralStrings(midi, time, dur, pan) {
+            const freq = mtof(midi);
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+            osc1.frequency.setValueAtTime(freq, time);
+            osc2.frequency.setValueAtTime(freq, time);
+            osc1.detune.setValueAtTime(-6, time);
+            osc2.detune.setValueAtTime(6, time);
+
+            // ビブラートLFO
+            const lfo = audioCtx.createOscillator();
+            const lfoGain = audioCtx.createGain();
+            lfo.frequency.value = 5.5; // 5.5Hz ビブラート
+            lfoGain.gain.value = 3.5;
+            lfo.connect(osc1.frequency);
+            lfo.connect(osc2.frequency);
+            lfo.start(time);
+            lfo.stop(time + dur);
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1900, time);
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.001, time);
+            gain.gain.linearRampToValueAtTime(0.11, time + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+
+            const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+            if (panner) panner.pan.setValueAtTime(pan, time);
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            filter.connect(gain);
+
+            if (panner) { gain.connect(panner); panner.connect(masterComp); }
+            else { gain.connect(masterComp); }
+
+            gain.connect(reverbGain);
+
+            osc1.start(time);
+            osc2.start(time);
+            osc1.stop(time + dur);
+            osc2.stop(time + dur);
+        }
+
+        // コントラバス低音 (重低音+弓の摩擦アタック)
+        function playOrchestralBass(midi, time, dur) {
+            const freq = mtof(midi);
+
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, time);
+
+            const subOsc = audioCtx.createOscillator();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(freq / 2, time); // サブオクターブで床を揺らす重低音
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(800, time);
+            filter.frequency.exponentialRampToValueAtTime(220, time + dur * 0.7);
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.001, time);
+            gain.gain.linearRampToValueAtTime(0.32, time + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+
+            osc.connect(filter);
+            subOsc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterComp);
+            gain.connect(reverbGain);
+
+            osc.start(time);
+            subOsc.start(time);
+            osc.stop(time + dur);
+            subOsc.stop(time + dur);
+        }
+
+        // オーケストラ打楽器 (ティンパニ・小太鼓)
+        function playOrchestralPercussion(type, time, stepDur) {
+            if (type === 1) { // 🥁 本物のティンパニ (ピッチベンド 85Hz -> 50Hz)
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(140, time);
-                osc.frequency.exponentialRampToValueAtTime(32, time + 0.08);
+                osc.frequency.setValueAtTime(88, time);
+                osc.frequency.exponentialRampToValueAtTime(54, time + 0.12);
 
-                gain.gain.setValueAtTime(0.40, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.09);
+                gain.gain.setValueAtTime(0.48, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.22);
 
                 osc.connect(gain);
                 gain.connect(masterComp);
+                gain.connect(reverbGain);
+
                 osc.start(time);
-                osc.stop(time + 0.09);
-            } else if (type === 2) { // リアル二層スネア (トーン + バンドパスノイズ)
+                osc.stop(time + 0.22);
+            } else if (type === 2) { // 🥁 オーケストラスネア小太鼓
                 const bufferSize = audioCtx.sampleRate * 0.12;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -454,18 +483,21 @@
                 noise.buffer = buffer;
                 const filter = audioCtx.createBiquadFilter();
                 filter.type = 'bandpass';
-                filter.frequency.setValueAtTime(1800, time);
+                filter.frequency.setValueAtTime(2100, time);
+                filter.Q.setValueAtTime(1.5, time);
 
                 const gain = audioCtx.createGain();
-                gain.gain.setValueAtTime(0.24, time);
-                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.10);
+                gain.gain.setValueAtTime(0.25, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.11);
 
                 noise.connect(filter);
                 filter.connect(gain);
                 gain.connect(masterComp);
+                gain.connect(reverbGain);
+
                 noise.start(time);
-                noise.stop(time + 0.10);
-            } else { // クリスタルハイハット (Pan: -0.35)
+                noise.stop(time + 0.11);
+            } else { // シンバル微音
                 const bufferSize = audioCtx.sampleRate * 0.04;
                 const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -475,23 +507,15 @@
                 noise.buffer = buffer;
                 const filter = audioCtx.createBiquadFilter();
                 filter.type = 'highpass';
-                filter.frequency.setValueAtTime(7500, time);
+                filter.frequency.setValueAtTime(7000, time);
 
                 const gain = audioCtx.createGain();
                 gain.gain.setValueAtTime(0.08, time);
                 gain.gain.exponentialRampToValueAtTime(0.01, time + 0.04);
 
-                const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-                if (panner) panner.pan.setValueAtTime(-0.35, time);
-
                 noise.connect(filter);
                 filter.connect(gain);
-                if (panner) {
-                    gain.connect(panner);
-                    panner.connect(masterComp);
-                } else {
-                    gain.connect(masterComp);
-                }
+                gain.connect(masterComp);
 
                 noise.start(time);
                 noise.stop(time + 0.04);
@@ -499,164 +523,53 @@
         }
 
         // ==========================================
-        // 2. 👾 レトロ4ch ファミコン合成エンジン
-        // ==========================================
-        function playStepRetro() {
-            if (activeMode !== 'retro') return;
-            const now = audioCtx.currentTime;
-            const stepDur = (60 / 152) / 4;
-            const idx = currentStep % battle_ch1.length;
-
-            const n1 = battle_ch1[idx];
-            if (n1 && n1 > 0) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(mtof(n1), now);
-                gain.gain.setValueAtTime(0.12, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.9);
-                osc.connect(gain);
-                gain.connect(analyser);
-                osc.start(now);
-                osc.stop(now + stepDur * 0.95);
-            }
-
-            const n2 = battle_ch2[idx];
-            if (n2 && n2 > 0) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(mtof(n2), now);
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.85);
-                osc.connect(gain);
-                gain.connect(analyser);
-                osc.start(now);
-                osc.stop(now + stepDur * 0.9);
-            }
-
-            const n3 = battle_bass[idx];
-            if (n3 && n3 > 0) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(mtof(n3), now);
-                gain.gain.setValueAtTime(0.24, now);
-                gain.gain.linearRampToValueAtTime(0.18, now + stepDur * 0.5);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + stepDur * 0.95);
-                osc.connect(gain);
-                gain.connect(analyser);
-                osc.start(now);
-                osc.stop(now + stepDur);
-            }
-
-            const drum = battle_drums[idx];
-            if (drum && drum > 0) {
-                const bufferSize = audioCtx.sampleRate * 0.06;
-                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-
-                const noise = audioCtx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = audioCtx.createBiquadFilter();
-                const gain = audioCtx.createGain();
-
-                if (drum === 1) {
-                    filter.type = 'lowpass';
-                    filter.frequency.setValueAtTime(160, now);
-                    gain.gain.setValueAtTime(0.25, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
-                } else if (drum === 2) {
-                    filter.type = 'bandpass';
-                    filter.frequency.setValueAtTime(1400, now);
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-                } else {
-                    filter.type = 'highpass';
-                    filter.frequency.setValueAtTime(6000, now);
-                    gain.gain.setValueAtTime(0.06, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
-                }
-
-                noise.connect(filter);
-                filter.connect(gain);
-                gain.connect(analyser);
-                noise.start(now);
-                noise.stop(now + 0.06);
-            }
-
-            currentStep++;
-            synthTimer = setTimeout(playStepRetro, stepDur * 1000);
-        }
-
-        // ==========================================
-        // UI 切り替えハンドラ
+        // UI ハンドラ
         // ==========================================
         function stopAll() {
             if (synthTimer) clearTimeout(synthTimer);
             if (mp3Audio) { mp3Audio.pause(); mp3Audio = null; }
-            activeMode = null;
+            isOrchPlaying = false;
+            isMp3Playing = false;
 
-            document.getElementById('btnHighend').textContent = '▶ ハイエンド合成 を再生';
-            document.getElementById('btnHighend').classList.remove('playing');
-            document.getElementById('btnRetro').textContent = '▶ レトロ4ch を再生';
-            document.getElementById('btnRetro').classList.remove('playing');
-            document.getElementById('btnMp3').textContent = '▶ MP3録音版 を再生';
+            document.getElementById('btnOrch').textContent = '▶ オーケストラ合成版 を再生';
+            document.getElementById('btnOrch').classList.remove('playing');
+            document.getElementById('btnMp3').textContent = '▶ 既存の MP3版 を再生';
             document.getElementById('btnMp3').classList.remove('playing');
 
             document.getElementById('visStatus').textContent = '待機中';
             document.getElementById('visStatus').style.color = 'var(--text-dim)';
         }
 
-        function toggleHighend() {
+        function toggleOrch() {
             initAudio();
-            if (activeMode === 'highend') {
+            if (isOrchPlaying) {
                 stopAll();
                 return;
             }
             stopAll();
-            activeMode = 'highend';
+            isOrchPlaying = true;
             currentStep = 0;
-            const btn = document.getElementById('btnHighend');
+            const btn = document.getElementById('btnOrch');
             btn.textContent = '⏹ 停止する';
             btn.classList.add('playing');
-            document.getElementById('visStatus').textContent = '再生中: ハイエンド・プログラム合成 (Web Audio DSP)';
-            document.getElementById('visStatus').style.color = 'var(--cyan)';
-            playStepHighend();
-            drawVisualizer();
-        }
-
-        function toggleRetro() {
-            initAudio();
-            if (activeMode === 'retro') {
-                stopAll();
-                return;
-            }
-            stopAll();
-            activeMode = 'retro';
-            currentStep = 0;
-            const btn = document.getElementById('btnRetro');
-            btn.textContent = '⏹ 停止する';
-            btn.classList.add('playing');
-            document.getElementById('visStatus').textContent = '再生中: ファミコン 4ch レトロ合成';
-            document.getElementById('visStatus').style.color = 'var(--green)';
-            playStepRetro();
+            document.getElementById('visStatus').textContent = '再生中: オーケストラ物理モデリング合成 (3.9 KB)';
+            document.getElementById('visStatus').style.color = 'var(--gold)';
+            playStepOrch();
             drawVisualizer();
         }
 
         function toggleMp3() {
             initAudio();
-            if (activeMode === 'mp3') {
+            if (isMp3Playing) {
                 stopAll();
                 return;
             }
             stopAll();
-            activeMode = 'mp3';
+            isMp3Playing = true;
             const btn = document.getElementById('btnMp3');
             btn.textContent = '⏹ 停止する';
             btn.classList.add('playing');
-            document.getElementById('visStatus').textContent = '再生中: 既存 MP3 録音音源 (64kbps)';
+            document.getElementById('visStatus').textContent = '再生中: 既存 MP3 録音音源 (240.9 KB)';
             document.getElementById('visStatus').style.color = 'var(--blue)';
 
             mp3Audio = new Audio('bgm/battle.mp3');
@@ -665,7 +578,7 @@
         }
 
         function drawVisualizer() {
-            if (!activeMode || activeMode === 'mp3') return;
+            if (!isOrchPlaying) return;
             const canvas = document.getElementById('canvasVis');
             const ctx = canvas.getContext('2d');
             const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -678,8 +591,7 @@
             let x = 0;
             for (let i = 0; i < dataArray.length; i++) {
                 const barHeight = (dataArray[i] / 255) * canvas.height;
-                const hue = activeMode === 'highend' ? (170 + i * 3) : (120 + i * 4);
-                ctx.fillStyle = `hsl(${hue}, 90%, 55%)`;
+                ctx.fillStyle = `hsl(${35 + i * 4}, 95%, 55%)`;
                 ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                 x += barWidth + 2;
             }
