@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔬 純粋データ駆動・周波数直結再生テスト (battle.mp3)</title>
+    <title>🎹 オンセット音符解析・歯切れ再生テスト (battle.mp3)</title>
     <style>
         :root {
             --bg-color: #080c14;
             --card-bg: #121824;
             --border-color: #1f293d;
+            --green: #2ed573;
             --cyan: #00d2d3;
             --blue: #1e90ff;
-            --green: #2ed573;
             --gold: #ffa502;
             --text: #e2e8f0;
             --text-dim: #8a99ad;
@@ -36,13 +36,13 @@
             flex-direction: column;
             gap: 14px;
         }
-        .card.synth { border-color: var(--cyan); box-shadow: 0 0 25px rgba(0, 210, 211, 0.15); }
+        .card.synth { border-color: var(--green); box-shadow: 0 0 25px rgba(46, 213, 115, 0.15); }
         .card.mp3 { border-color: var(--blue); }
 
         .card-header { display: flex; justify-content: space-between; align-items: center; }
         .card-title { font-size: 1.15rem; font-weight: bold; }
         .badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: bold; }
-        .badge-cyan { background: rgba(0, 210, 211, 0.2); color: var(--cyan); border: 1px solid var(--cyan); }
+        .badge-green { background: rgba(46, 213, 115, 0.2); color: var(--green); border: 1px solid var(--green); }
         .badge-blue { background: rgba(30, 144, 255, 0.2); color: var(--blue); border: 1px solid var(--blue); }
 
         .btn-play {
@@ -59,8 +59,8 @@
             gap: 10px;
             color: #ffffff;
         }
-        .btn-synth { background: #008f91; }
-        .btn-synth:hover { background: #00a8aa; }
+        .btn-synth { background: #238636; }
+        .btn-synth:hover { background: #2ea043; }
         .btn-synth.playing { background: #ef4444; }
         .btn-mp3 { background: #1f6feb; }
         .btn-mp3:hover { background: #388bfd; }
@@ -95,15 +95,15 @@
             padding: 12px 16px;
             font-family: monospace;
             font-size: 0.8rem;
-            color: var(--cyan);
+            color: var(--green);
             display: flex;
             justify-content: space-between;
         }
 
         .note-box {
             font-size: 0.85rem;
-            background: rgba(0, 210, 211, 0.08);
-            border-left: 4px solid var(--cyan);
+            background: rgba(46, 213, 115, 0.08);
+            border-left: 4px solid var(--green);
             padding: 14px 18px;
             border-radius: 0 8px 8px 0;
             line-height: 1.7;
@@ -113,27 +113,27 @@
 <body>
     <div class="container">
         <header>
-            <h1>🔬 純粋データ駆動・周波数直結再生テスト</h1>
-            <div class="subtitle">AIの知識・楽譜解釈を一切排除し、Pythonで抽出した生の周波数（Hz）JSONを直結演奏</div>
+            <h1>🎹 オンセット音符解析・歯切れ再生テスト</h1>
+            <div class="subtitle">ピー音を完全解消！音が鳴った瞬間（281音符）を検出し、1音ずつ歯切れよく区切って演奏</div>
         </header>
 
         <div class="compare-grid">
-            <!-- 1. 純粋データ駆動 Web Audio -->
+            <!-- 1. オンセット音符再生 -->
             <div class="card synth">
                 <div class="card-header">
-                    <span class="card-title" style="color: var(--cyan);">📊 A. 生データ直結再生 (JSON数値)</span>
-                    <span class="badge badge-cyan">1,232 フレーム解析値</span>
+                    <span class="card-title" style="color: var(--green);">🎹 A. 音符化・歯切れ再生版 (281音符)</span>
+                    <span class="badge badge-green">アタック区切り処理</span>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--text-dim); min-height: 44px;">
-                    battle_pitch_data.json から毎秒40回（25ms毎）の周波数(Hz)と音量(Vol)を読み込み、オシレーターに直結。
+                    battle_notes_data.json の281個の音符データから、ピアノやシンセのように「発音 ➡ 減衰」の区切りをつけて再生。
                 </p>
                 <button id="btnSynth" class="btn-play btn-synth" onclick="toggleSynth()">
-                    ▶ 生データ直結版 を再生
+                    ▶ 音符化・歯切れ再生 を開始
                 </button>
                 <div class="specs-grid">
-                    <div class="spec-row"><span>解析ソース:</span><span class="spec-val" style="color: var(--cyan);">battle_pitch_data.json</span></div>
-                    <div class="spec-row"><span>データ点数:</span><span class="spec-val">1,232 点 (25ms間隔)</span></div>
-                    <div class="spec-row"><span>AIの推測・介入:</span><span class="spec-val" style="color: var(--green);">完全にゼロ (数値直結)</span></div>
+                    <div class="spec-row"><span>検出音符数:</span><span class="spec-val" style="color: var(--green);">281 音符イベント</span></div>
+                    <div class="spec-row"><span>発音エンベロープ:</span><span class="spec-val">アタック(10ms) + 減衰</span></div>
+                    <div class="spec-row"><span>ピー音の解消:</span><span class="spec-val" style="color: var(--green);">完全解消 (歯切れ音)</span></div>
                 </div>
             </div>
 
@@ -160,8 +160,8 @@
         <!-- リアルタイム数値モニター -->
         <div class="data-viewer">
             <span>再生時間: <b id="lblTime" style="color: #ffffff;">0.00s</b></span>
-            <span>現在周波数: <b id="lblHz" style="color: #ffffff;">0.0 Hz</b></span>
-            <span>現在音量: <b id="lblVol" style="color: #ffffff;">0.00</b></span>
+            <span>現在音符: <b id="lblHz" style="color: #ffffff;">---</b></span>
+            <span>音符長: <b id="lblDur" style="color: #ffffff;">---</b></span>
         </div>
 
         <div class="visualizer">
@@ -169,30 +169,29 @@
         </div>
 
         <div class="note-box">
-            💡 <b>透明性の証明:</b><br>
-            ・この「生データ直結版」には、人間やAIが書いた「ドレミの音符」は一切存在しません。<br>
-            ・Pythonが `battle.mp3` から計算した `[{"t": 0.1, "hz": 98.4, "vol": 0.475}, ...]` という1232個の純粋な物理計測値（周波数）を、Web Audioのオシレーターがそのまま発振して音に変換しています。
+            💡 <b>改善されたポイント:</b><br>
+            ・音が一本調子で繋がりっぱなしになる「ピー音」をなくし、**音の出だしで音が立ち上がり、次の音との間に隙間（区切り）を作るエンベロープ処理**を実装しました。<br>
+            ・これにより、元曲のリズム（タ・タ・タ・ターン）が1音ずつはっきり聴こえるようになります。
         </div>
     </div>
 
     <script>
         let audioCtx = null;
-        let pitchData = [];
+        let notesData = [];
         let isSynthPlaying = false;
         let isMp3Playing = false;
         let mp3Audio = null;
-        let synthOsc = null;
-        let synthGain = null;
+        let activeNodes = [];
         let playInterval = null;
         let startTime = 0;
         let analyser = null;
 
-        // JSON生データのプリロード
-        fetch('battle_pitch_data.json')
+        // JSONデータのプリロード
+        fetch('battle_notes_data.json')
             .then(res => res.json())
             .then(data => {
-                pitchData = data;
-                console.log('Loaded pitch data frames:', pitchData.length);
+                notesData = data;
+                console.log('Loaded notes:', notesData.length);
             });
 
         function initAudio() {
@@ -209,16 +208,16 @@
         }
 
         function stopAll() {
-            if (synthOsc) {
-                try { synthOsc.stop(); synthOsc.disconnect(); } catch(e){}
-                synthOsc = null;
-            }
+            activeNodes.forEach(node => {
+                try { node.stop(); node.disconnect(); } catch(e){}
+            });
+            activeNodes = [];
             if (playInterval) clearInterval(playInterval);
             if (mp3Audio) { mp3Audio.pause(); mp3Audio = null; }
             isSynthPlaying = false;
             isMp3Playing = false;
 
-            document.getElementById('btnSynth').textContent = '▶ 生データ直結版 を再生';
+            document.getElementById('btnSynth').textContent = '▶ 音符化・歯切れ再生 を開始';
             document.getElementById('btnSynth').classList.remove('playing');
             document.getElementById('btnMp3').textContent = '▶ 元の MP3版 を再生';
             document.getElementById('btnMp3').classList.remove('playing');
@@ -236,37 +235,41 @@
             btn.textContent = '⏹ 停止する';
             btn.classList.add('playing');
 
-            // 生データ直結オシレーターの生成
-            synthOsc = audioCtx.createOscillator();
-            synthGain = audioCtx.createGain();
-            synthOsc.type = 'sawtooth';
-
-            // フィルター
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(2000, audioCtx.currentTime);
-
-            synthOsc.connect(filter);
-            filter.connect(synthGain);
-            synthGain.connect(analyser);
-
             const now = audioCtx.currentTime;
             startTime = now;
 
-            // JSONの全フレーム（1232点）をスケジュール
-            pitchData.forEach(pt => {
-                const targetTime = now + pt.t;
-                if (pt.hz > 0 && pt.vol > 0) {
-                    synthOsc.frequency.setValueAtTime(pt.hz, targetTime);
-                    synthGain.gain.setValueAtTime(pt.vol * 0.25, targetTime);
-                } else {
-                    synthGain.gain.setValueAtTime(0.0001, targetTime);
-                }
+            // 281個の音符をスケジュール（歯切れの良い発音）
+            notesData.forEach(n => {
+                const tStart = now + n.t;
+                const dur = n.dur;
+
+                // オシレーター (パルス/矩形波)
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(n.hz, tStart);
+
+                // フィルター
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(2200, tStart);
+
+                // 発音エンベロープ (アタック -> 減衰 -> 停止)
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.001, tStart);
+                gain.gain.linearRampToValueAtTime(n.vol * 0.22, tStart + 0.008); // 8msで鋭く発音
+                gain.gain.exponentialRampToValueAtTime(0.001, tStart + dur); // 減衰して区切り
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(analyser);
+
+                osc.start(tStart);
+                osc.stop(tStart + dur);
+
+                activeNodes.push(osc);
             });
 
-            synthOsc.start(now);
-
-            // 画面数値モニターの更新ループ
+            // 画面モニター更新
             playInterval = setInterval(() => {
                 const elapsed = audioCtx.currentTime - startTime;
                 if (elapsed >= 30.84) {
@@ -274,13 +277,17 @@
                     return;
                 }
                 document.getElementById('lblTime').textContent = elapsed.toFixed(2) + 's';
-                const frameIdx = Math.floor(elapsed / 0.025);
-                if (frameIdx < pitchData.length) {
-                    const cur = pitchData[frameIdx];
-                    document.getElementById('lblHz').textContent = cur.hz > 0 ? cur.hz.toFixed(1) + ' Hz' : '0.0 Hz (休符)';
-                    document.getElementById('lblVol').textContent = cur.vol.toFixed(2);
+                
+                // 現在鳴っている音符を探す
+                const curNote = notesData.find(n => elapsed >= n.t && elapsed <= n.t + n.dur);
+                if (curNote) {
+                    document.getElementById('lblHz').textContent = curNote.hz.toFixed(1) + ' Hz';
+                    document.getElementById('lblDur').textContent = (curNote.dur * 1000).toFixed(0) + ' ms';
+                } else {
+                    document.getElementById('lblHz').textContent = '--- (休符)';
+                    document.getElementById('lblDur').textContent = '---';
                 }
-            }, 50);
+            }, 40);
 
             drawVisualizer();
         }
@@ -316,7 +323,7 @@
             let x = 0;
             for (let i = 0; i < dataArray.length; i++) {
                 const barHeight = (dataArray[i] / 255) * canvas.height;
-                ctx.fillStyle = `hsl(${175 + i * 4}, 90%, 50%)`;
+                ctx.fillStyle = `hsl(${135 + i * 4}, 90%, 50%)`;
                 ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                 x += barWidth + 2;
             }
