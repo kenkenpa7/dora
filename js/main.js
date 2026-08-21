@@ -711,8 +711,8 @@ class Game {
             const monsterSizes = {
                 slime:    { size: 60,  x: 250, y: 130 },
                 dracky:   { size: 210, x: 200, y: 76 },
-                skeleton: { size: 190, x: 195, y: 80 },
-                wizard:   { size: 210, x: 185, y: 75 },
+                skeleton: { size: 110, x: 226, y: 46 },
+                wizard:   { size: 150, x: 216, y: 44 },
                 golem:    { size: 260, x: 175, y: 55 },
                 dragon:   { size: 280, x: 165, y: 50 }
             };
