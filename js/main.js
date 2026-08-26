@@ -567,13 +567,13 @@ class Game {
         this.ctx.fillStyle = '#aaaaaa';
         this.ctx.font = '12px monospace';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('操作: 矢印キー/WASD(移動)  Enter/Space/Z(決定・会話)', this.canvas.width / 2, 330);
+        this.ctx.fillText('操作: 矢印キー/WASD(移動)  Enter/Space/Z(決定・会話)', this.canvas.width / 2, 325);
 
-        // バージョン表示
-        this.ctx.fillStyle = '#666666';
-        this.ctx.font = '11px monospace';
+        // バージョン表示（ハッキリ見える明るい白色）
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 12px monospace';
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(this.version, this.canvas.width - 50, this.canvas.height - 48);
+        this.ctx.fillText(this.version, this.canvas.width - 55, 65);
     }
 
     renderEnding() {
