@@ -20,7 +20,7 @@
 <body>
     <div class="game-container">
         <header class="header-bar">
-            <span class="title-tag">⚔️ DRAGON QUEST I 風 RPG <span style="font-size:0.75em; opacity:0.75; font-weight:normal;">v1.0.3</span></span>
+            <span class="title-tag">⚔️ DRAGON QUEST I 風 RPG <span style="font-size:0.75em; opacity:0.75; font-weight:normal;">v1.0.4</span></span>
             <div class="header-actions">
                 <button id="soundToggle" class="header-btn" onclick="toggleMute()">🔊 サウンド: ON</button>
                 <button id="quitBtn" class="header-btn quit-btn" onclick="quitGame()">🛑 やめる</button>
@@ -84,8 +84,29 @@
         }
 
         function quitGame() {
-            if (confirm('ゲームをやめてタイトル画面に戻りますか？')) {
-                location.reload();
+            if (confirm('ゲームを終了してアプリを閉じますか？')) {
+                // 音声を完全停止
+                if (typeof audio !== 'undefined') {
+                    audio.stopBGM();
+                    audio.isMuted = true;
+                }
+                // アプリ・ウィンドウを閉じる試み
+                try {
+                    window.open('', '_self', '');
+                    window.close();
+                } catch (e) {}
+
+                // ブラウザの制限でタブが閉じない場合の終了画面表示
+                setTimeout(() => {
+                    document.body.innerHTML = `
+                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; height:100dvh; background:#000000; color:#aaaaaa; font-family:monospace; text-align:center; padding:20px;">
+                            <div style="font-size:36px; margin-bottom:16px;">⚔️</div>
+                            <div style="font-size:18px; color:#ffffff; font-weight:bold; margin-bottom:12px;">ゲームを終了しました</div>
+                            <div style="font-size:13px; line-height:1.6; color:#888888;">端末のホーム画面に戻るか、<br>画面・タブを閉じてください。</div>
+                            <button onclick="location.reload()" style="margin-top:32px; background:#2a2a36; color:#ffffff; border:1px solid #555; padding:8px 18px; border-radius:4px; font-size:13px; cursor:pointer;">▶ もう一度遊ぶ</button>
+                        </div>
+                    `;
+                }, 100);
             }
         }
         // Service Workerの登録（PWA・オフライン対応）
