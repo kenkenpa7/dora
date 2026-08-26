@@ -6,6 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
+        this.version = 'Ver 1.0.1';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス (王様の前に上向きで直立)
@@ -565,7 +566,14 @@ class Game {
 
         this.ctx.fillStyle = '#aaaaaa';
         this.ctx.font = '12px monospace';
+        this.ctx.textAlign = 'center';
         this.ctx.fillText('操作: 矢印キー/WASD(移動)  Enter/Space/Z(決定・会話)', this.canvas.width / 2, 330);
+
+        // バージョン表示
+        this.ctx.fillStyle = '#666666';
+        this.ctx.font = '11px monospace';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(this.version, this.canvas.width - 50, this.canvas.height - 48);
     }
 
     renderEnding() {
