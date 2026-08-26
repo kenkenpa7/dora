@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 1.0.5';
+        this.version = 'Ver 1.0.6';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス (王様の前に上向きで直立)
@@ -656,12 +656,13 @@ class Game {
             }
         }
 
-        // NPC描画
+        // NPC描画（ドラクエ風ピコピコアニメーション）
+        const npcFrame = Math.floor(Date.now() / 450) % 2;
         for (const npc of this.currentMap.npcs) {
             const screenX = offsetX + npc.x * tw;
             const screenY = offsetY + npc.y * tw;
             if (screenX >= -tw && screenX <= this.canvas.width && screenY >= -tw && screenY <= this.canvas.height) {
-                gfx.drawCharacter(this.ctx, npc.sprite, 'down', 0, screenX, screenY);
+                gfx.drawCharacter(this.ctx, npc.sprite, 'down', npcFrame, screenX, screenY);
             }
         }
 
