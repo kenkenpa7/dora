@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 1.0.4';
+        this.version = 'Ver 1.0.5';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス (王様の前に上向きで直立)
@@ -554,8 +554,42 @@ class Game {
         this.ctx.font = '16px monospace';
         this.ctx.fillText('〜 レトロRPG プロトタイプ 〜', this.canvas.width / 2, 145);
 
-        // スライム表示
-        gfx.drawMonster(this.ctx, 'slime', this.canvas.width / 2 - 40, 170, 80);
+        // スライムのぽよんぽよんバウンスアニメーション
+        const time = Date.now() / 1000;
+        const bounceCycle = (time * 3.8) % Math.PI; // リズミカルな跳ね周期
+        const jumpHeight = Math.sin(bounceCycle) * 20; // 20pxジャンプ
+
+        // スカッシュ＆ストレッチ（着地で潰れ、頂点で伸びる）
+        let scaleX = 1.0;
+        let scaleY = 1.0;
+        if (jumpHeight < 2.5) {
+            scaleX = 1.20; // 着地で横に「ぽよん」
+            scaleY = 0.80;
+        } else if (jumpHeight > 14) {
+            scaleX = 0.90; // 上昇中に縦に「きゅっ」
+            scaleY = 1.10;
+        }
+
+        const slimeCenterX = this.canvas.width / 2;
+        const groundY = 248; // 着地ライン
+        const slimeSize = 80;
+
+        // 足元の影（ジャンプに合わせて伸縮）
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        this.ctx.beginPath();
+        const shadowW = 28 * (1 - jumpHeight / 40);
+        const shadowH = 7 * (1 - jumpHeight / 50);
+        this.ctx.ellipse(slimeCenterX, groundY + 2, Math.max(6, shadowW), Math.max(2, shadowH), 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.restore();
+
+        // スライム本体の変形描画
+        this.ctx.save();
+        this.ctx.translate(slimeCenterX, groundY - jumpHeight - (slimeSize * scaleY) / 2);
+        this.ctx.scale(scaleX, scaleY);
+        gfx.drawMonster(this.ctx, 'slime', -slimeSize / 2, -slimeSize / 2, slimeSize);
+        this.ctx.restore();
 
         this.ctx.fillStyle = '#00ffcc';
         this.ctx.font = '16px monospace';
