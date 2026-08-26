@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dora-gh-pages-v5';
+const CACHE_NAME = 'dora-gh-pages-v6';
 const ASSETS_TO_CACHE = [
   '/dora/',
   '/dora/index.html',

@@ -74,7 +74,8 @@ class SoundEngine {
         if (this.isMuted) return;
         this.init();
 
-        const se1 = this.getSE('encounter', 'bgm/encounter.wav', 0.80);
+        const se1 = this.getSE('encounter', 'bgm/encounter.wav', 0.50);
+        se1.volume = 0.50;
         se1.currentTime = 0;
         const p1 = se1.play();
         if (p1 !== undefined) p1.catch(() => {});
@@ -82,7 +83,7 @@ class SoundEngine {
         // 2回目リピート再生 (0.42秒後)
         setTimeout(() => {
             const se2 = new Audio('bgm/encounter.wav');
-            se2.volume = 0.80;
+            se2.volume = 0.50;
             se2.play().catch(() => {});
         }, 420);
     }
