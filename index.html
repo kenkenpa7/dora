@@ -20,8 +20,11 @@
 <body>
     <div class="game-container">
         <header class="header-bar">
-            <span class="title-tag">⚔️ DRAGON QUEST I 風 RPG <span style="font-size:0.75em; opacity:0.75; font-weight:normal;">v1.0.2</span></span>
-            <button id="soundToggle" class="sound-toggle-btn" onclick="toggleMute()">🔊 サウンド: ON</button>
+            <span class="title-tag">⚔️ DRAGON QUEST I 風 RPG <span style="font-size:0.75em; opacity:0.75; font-weight:normal;">v1.0.3</span></span>
+            <div class="header-actions">
+                <button id="soundToggle" class="header-btn" onclick="toggleMute()">🔊 サウンド: ON</button>
+                <button id="quitBtn" class="header-btn quit-btn" onclick="quitGame()">🛑 やめる</button>
+            </div>
         </header>
 
         <main class="canvas-wrapper">
@@ -77,6 +80,12 @@
                 }
                 const btn = document.getElementById('soundToggle');
                 btn.textContent = audio.isMuted ? '🔇 サウンド: OFF' : '🔊 サウンド: ON';
+            }
+        }
+
+        function quitGame() {
+            if (confirm('ゲームをやめてタイトル画面に戻りますか？')) {
+                location.reload();
             }
         }
         // Service Workerの登録（PWA・オフライン対応）
