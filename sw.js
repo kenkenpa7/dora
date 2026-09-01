@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dora-gh-pages-v15';
+const CACHE_NAME = 'dora-gh-pages-v16';
 const ASSETS_TO_CACHE = [
   '/dora/',
   '/dora/index.html',
@@ -26,9 +26,8 @@ const ASSETS_TO_CACHE = [
   '/dora/bgm/victory.wav'
 ];
 
-// インストール時: アセットを安全にキャッシュ
+// インストール時: 全アセットを確実にキャッシュしてから安全にアクティベート
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       console.log('[Service Worker] Precaching assets safely...');
@@ -45,11 +44,13 @@ self.addEventListener('install', (event) => {
         })
       );
       console.log('[Service Worker] Precaching completed.');
+      // 全音源のダウンロードが完了した後に初めて新しいSWへ移行
+      self.skipWaiting();
     })
   );
 });
 
-// アクティベート時: 古いキャッシュの削除
+// アクティベート時: 古いキャッシュの安全な削除
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keyList) => {
@@ -65,14 +66,16 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Rangeリクエスト（iOS Safari / Android Audio）対応のキャッシュレスポンス生成
+// Rangeリクエスト（iOS Safari / Android Audio）対応の安全なキャッシュレスポンス生成
 async function handleRangeRequest(request, cachedResponse) {
   const rangeHeader = request.headers.get('range');
   if (!rangeHeader) {
     return cachedResponse;
   }
 
-  const arrayBuffer = await cachedResponse.arrayBuffer();
+  // cachedResponseをcloneしてBodyの消費エラー（iOS Safari/WebKit）を防止
+  const cloned = cachedResponse.clone();
+  const arrayBuffer = await cloned.arrayBuffer();
   const total = arrayBuffer.byteLength;
   const parts = rangeHeader.replace(/bytes=/, '').split('-');
   const start = parseInt(parts[0], 10);
@@ -91,6 +94,16 @@ async function handleRangeRequest(request, cachedResponse) {
   headers.set('Content-Range', `bytes ${start}-${end}/${total}`);
   headers.set('Content-Length', slicedBuffer.byteLength);
   headers.set('Accept-Ranges', 'bytes');
+
+  // Content-Type が欠落している場合の安全補完
+  if (!headers.has('Content-Type') || headers.get('Content-Type') === 'application/octet-stream') {
+    const url = request.url.toLowerCase();
+    if (url.endsWith('.mp3')) {
+      headers.set('Content-Type', 'audio/mpeg');
+    } else if (url.endsWith('.wav')) {
+      headers.set('Content-Type', 'audio/wav');
+    }
+  }
 
   return new Response(slicedBuffer, {
     status: 206,
