@@ -1,7 +1,7 @@
-# 🎮 ドラゴンクエスト風 レトロRPG (GitHub Pages版)
+# 🎮 ドラゴンクエスト風 レトロRPG (GitHub Pages版 v1.1.0)
 
 スマートフォン・PC両対応のドラクエ1風レトロRPGプロトタイプです。
-PWA（Progressive Web Apps）および完全オフライン動作に対応し、GitHub Pages経由で全世界に公開されています。
+PWA（Progressive Web Apps）および Web Audio API による**完全オフライン動作**に対応し、GitHub Pages経由で全世界に公開されています。
 
 ---
 
@@ -11,7 +11,7 @@ PWA（Progressive Web Apps）および完全オフライン動作に対応し、
 * **モンスター図鑑・編集ツール**: **`https://kenkenpa7.github.io/dora/monster_viewer.html`**
 * **GitHubリポジトリ**: `https://github.com/kenkenpa7/dora`
 * **ホスティング環境**: GitHub Pages (`main` ブランチ / `/(root)` 配信)
-* **ローカル作業フォルダ**: `c:\Users\beach\Desktop\大元\ゲーム\dora`
+* **ローカル作業フォルダ**: `c:\Users\beach\Desktop\大元\ゲーム\dora(ドラクエGit）`
 
 ---
 
@@ -25,9 +25,9 @@ PWA（Progressive Web Apps）および完全オフライン動作に対応し、
    * `https://kenkenpa7.github.io/dora/` にアクセス
    * 右上の「︙」メニューをタップ
    * **「アプリをインストール」** または **「ホーム画面に追加」** を選択
-3. **オフライン動作**:
-   * 初回起動時にService Worker（`sw.js`）が全音源・スクリプト・画像をキャッシュします。
-   * スマホを機内モード（電波オフ）にしても、通常通りBGM付きで起動・プレイ可能です。
+3. **完全オフライン動作**:
+   * 初回起動時にService Worker（`sw.js`）がゲーム本体および全11音源を端末内にキャッシュします。
+   * スマホを機内モード（電波オフ）にしても、通常通りBGM・効果音付きで起動・プレイ可能です。
 
 ---
 
@@ -35,70 +35,48 @@ PWA（Progressive Web Apps）および完全オフライン動作に対応し、
 
 ```text
 ゲーム/dora/
-├── index.html                     # ゲーム本体HTML（PWAタグ・ServiceWorker登録）
+├── index.html                     # ゲーム本体HTML（PWAタグ・ServiceWorker登録・Ver 1.1.0）
 ├── monster_viewer.html            # モンスター確認・パラメータ調整ビューア
-├── manifest.json                  # Web App Manifest（アプリ名・アイコン・画面向き）
+├── manifest.json                  # Web App Manifest（スタンドアロンPWA設定）
 ├── sw.js                          # Service Worker（Cache First / 完全オフラインエンジン）
 ├── README.md                      # 本書（管理・更新マニュアル）
+├── AGENTS.md                      # doraプロジェクト専用AI行動ルール
+├── バージョン履歴.md               # Gitコミット連動・自動生成変更履歴
+├── プロジェクト開発全記録_引継ぎ書.md # 開発全記録・トラブル解決引継ぎ書
 ├── css/
-│   └── style.css                  # スタイルシート（スマホ縦画面・ノッチセーフエリア対応）
+│   └── style.css                  # スタイルシート（スマホノッチ対応・全画面100dvh）
 ├── js/
-│   ├── audio.js                   # Web Audio / BGM・SE再生ロジック
+│   ├── audio.js                   # Web Audio API 音声エンジン (fetch+decodeAudioData)
 │   ├── battle.js                  # コマンドバトル処理
 │   ├── data.js                    # マップデータ・モンスターデータ・呪文・アイテム定義
-│   ├── graphics.js                # Canvas描画（マップ・キャラ・モンスター）
+│   ├── graphics.js                # Canvas描画（2コマピコピコアニメーション搭載）
 │   └── main.js                    # メインゲームループ・入力ハンドラ・シーン管理
-├── bgm/                           # 全11曲の音源ファイル（MP3/WAV）
+├── bgm/                           # 全11音源（MP3 8曲 / WAV 3種）
 │   ├── opening.mp3, castle.mp3, town.mp3, field.mp3, dungeon.mp3
 │   ├── battle.mp3, boss.mp3, ending.mp3
 │   └── encounter.wav, inn.wav, victory.wav
-├── icons/                         # PWAアプリアイコン
-│   ├── icon-192.png               # Android / PWA標準アイコン (192x192)
-│   ├── icon-512.png               # 高解像度・スプラッシュ用 (512x512)
-│   └── apple-touch-icon.png       # iOS Safari用 (180x180)
-└── プロジェクト開発全記録_引継ぎ書.md
+└── icons/                         # PWAアプリアイコン (192x192, 512x512, apple-touch-icon)
 ```
 
 ---
 
-## 🚀 4. 更新・修正時の作業手順（GitHubデプロイルート）
+## 🚀 4. 更新・修正時の安全なGit運用手順
 
-コードや画像を修正した場合、以下の手順でGitHubへPushすることで、**数十秒〜1分ほどでGitHub Pages上のゲームへ自動反映**されます。
+コードや画像を修正した場合、以下のルールに従ってGit更新を行います：
 
-### ターミナル（PowerShell）での実行手順
-
-```powershell
-# 1. dora フォルダへ移動
-cd c:\Users\beach\Desktop\大元\ゲーム\dora
-
-# 2. 変更内容を確認
-git status
-
-# 3. 変更をステージング
-git add .
-
-# 4. コミット（修正内容をメモ）
-git commit -m "update: モンスターデータの調整とUI改善"
-
-# 5. GitHubへプッシュ（自動デプロイ開始）
-git push origin main
-```
+1. **`AGENTS.md` のルール遵守**:
+   * コマンド実行前に必ず「更新前バージョン ➡ 更新後バージョン」を明示すること。
+   * `index.html`、`js/main.js`、`sw.js` のバージョン番号・キャッシュ名を同期して繰り上げること。
+2. **安全なステージング**:
+   * `git add .` の一括指定は禁止。変更したファイルだけを個別に指定すること。
+3. **コミット ＆ Push**:
+   ```powershell
+   git add index.html js/main.js sw.js ...
+   git commit -m "feat: ○○機能の追加 (v1.1.x)"
+   git push origin main
+   ```
+4. **自動生成ドキュメントの反映**:
+   * コミット完了後、自動更新された `バージョン履歴.md` をコミット＆Pushする。
 
 ---
-
-## ⚠️ 5. 今後の改修時の注意点（PWA・音声・パス設定ルール）
-
-1. **音声圧縮の安全ライン（これ以上削ると再生不能になる限界値）**:
-   * **サンプリング周波数**: **`44.1 kHz` を死守**（最低でも `32.0 kHz`。`24 kHz` 以下に落とすとスマホのローカル再生が壊れます）。
-   * **MP3 ビットレート**: **`128 kbps`（推奨）** 〜 **`64 kbps`（限界値）**（32kbps以下はNG）。
-   * **MP3 規格**: 必ず **`MPEG-1 Layer III`** を維持すること。
-2. **パス指定はすべて `/dora/` または相対パスにすること**:
-   * GitHub Pages はドメイン直下ではなく `/dora/` のサブパスで配信されます。
-   * 新しいファイルや音源を追加した場合は、以下の2ファイルにもパスを追記してください：
-     * `manifest.json`: アイコンや起動URL
-     * `sw.js`: `ASSETS_TO_CACHE` 配列への追加 ＆ `CACHE_NAME` のバージョンアップ
-3. **キャッシュ更新**:
-   * JSや音源、CSSを変更した際は、`sw.js` 内の `CACHE_NAME` をカウントアップ（例: `v10` ➡ `v11`）することで、既存プレイヤーのスマホキャッシュが安全に最新化されます。
-
----
-*最終更新日: 2026年8月26日*
+*最終更新日: 2026年9月2日 (v1.1.0)*
