@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="レトロRPG">
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 
@@ -19,7 +20,7 @@
 <body>
     <div class="game-container">
         <header class="header-bar">
-            <span class="title-tag">⚔️ DRAGON QUEST I 風 RPG <span style="font-size:0.75em; opacity:0.75; font-weight:normal;">v1.0.9</span></span>
+            <span class="title-tag">⚔️ DRAGON QUEST I 風 RPG <span style="font-size:0.75em; opacity:0.75; font-weight:normal;">v1.1.0</span></span>
             <div class="header-actions">
                 <button id="soundToggle" class="header-btn" onclick="toggleMute()">🔊 サウンド: ON</button>
                 <button id="quitBtn" class="header-btn quit-btn" onclick="quitGame()">🛑 やめる</button>
@@ -108,19 +109,17 @@
                 }, 100);
             }
         }
-        // 既存のService Workerおよびキャッシュを完全登録解除（Xserver版と同等化）
+        // Service Workerの登録（PWA・完全オフライン対応）
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then((registrations) => {
-                for (const registration of registrations) {
-                    registration.unregister();
-                    console.log('[PWA] Service Worker unregistered.');
-                }
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then((reg) => {
+                        console.log('[PWA] Service Worker registered successfully! Scope:', reg.scope);
+                    })
+                    .catch((err) => {
+                        console.error('[PWA] Service Worker registration failed:', err);
+                    });
             });
-            if ('caches' in window) {
-                caches.keys().then((keys) => {
-                    keys.forEach(k => caches.delete(k));
-                });
-            }
         }
     </script>
 </body>

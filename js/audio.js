@@ -1,14 +1,15 @@
-// 高品質BGMオーディオプレイヤー ＆ ウォーム効果音エンジン
+// 高品質BGMオーディオプレイヤー ＆ ウォーム効果音エンジン (Web Audio API 完全統合版)
 class SoundEngine {
     constructor() {
         this.ctx = null;
         this.masterGain = null;
+        this.bgmGain = null;
         this.currentBgmType = null;
-        this.bgmAudio = null;
+        this.currentBgmSource = null;
         this.isMuted = false;
-        this.bgmVolume = 0.18; // BGMを心地よい音量に
-        this.bgmPool = {};
-        this.sePool = {};
+        this.bgmVolume = 0.18; // BGMの心地よい音量
+        this.audioBuffers = {}; // url -> AudioBuffer (デコード済みキャッシュ)
+        this.loadingPromises = {}; // url -> Promise (重複ロード防止)
     }
 
     init() {
@@ -18,14 +19,47 @@ class SoundEngine {
             this.masterGain = this.ctx.createGain();
             this.masterGain.gain.setValueAtTime(1.6, this.ctx.currentTime); // 効果音全体をパワフルに増幅
             this.masterGain.connect(this.ctx.destination);
+
+            this.bgmGain = this.ctx.createGain();
+            this.bgmGain.gain.setValueAtTime(this.isMuted ? 0 : this.bgmVolume, this.ctx.currentTime);
+            this.bgmGain.connect(this.masterGain);
         }
         if (this.ctx.state === 'suspended') {
             this.ctx.resume();
         }
     }
 
-    // --- BGM再生システム (スマート・オンデマンドキャッシュ＆0秒再生) ---
-    playBGM(type) {
+    // 音源ファイルを fetch してデコード（Service Workerのキャッシュから通常取得）
+    async loadAudioBuffer(url) {
+        if (this.audioBuffers[url]) {
+            return this.audioBuffers[url];
+        }
+        if (this.loadingPromises[url]) {
+            return await this.loadingPromises[url];
+        }
+
+        this.loadingPromises[url] = (async () => {
+            try {
+                this.init();
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+                const arrayBuffer = await res.arrayBuffer();
+                const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+                this.audioBuffers[url] = audioBuffer;
+                return audioBuffer;
+            } catch (err) {
+                console.warn(`[SoundEngine] Failed to load ${url}:`, err);
+                return null;
+            } finally {
+                delete this.loadingPromises[url];
+            }
+        })();
+
+        return await this.loadingPromises[url];
+    }
+
+    // --- BGM再生システム (Web Audio API ループ再生) ---
+    async playBGM(type) {
         if (this.currentBgmType === type) return;
         this.init();
         this.stopBGM();
@@ -33,80 +67,73 @@ class SoundEngine {
         this.currentBgmType = type;
         if (this.isMuted) return;
 
-        // 必要な時に初めてロードしてキャッシュ（起動時負荷ゼロ）
-        let audioEl = this.bgmPool[type];
-        if (!audioEl) {
-            audioEl = new Audio(`bgm/${type}.mp3`);
-            audioEl.loop = true;
-            this.bgmPool[type] = audioEl;
-        }
+        const url = `bgm/${type}.mp3`;
+        const buffer = await this.loadAudioBuffer(url);
+        if (!buffer || this.currentBgmType !== type) return;
 
-        audioEl.volume = this.bgmVolume;
-        audioEl.currentTime = 0;
-
-        const playPromise = audioEl.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(() => {});
-        }
-        this.bgmAudio = audioEl;
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(this.bgmGain);
+        source.start(0);
+        this.currentBgmSource = source;
     }
 
     stopBGM() {
-        if (this.bgmAudio) {
-            this.bgmAudio.pause();
-            this.bgmAudio.currentTime = 0;
-            this.bgmAudio = null;
+        if (this.currentBgmSource) {
+            try {
+                this.currentBgmSource.stop();
+                this.currentBgmSource.disconnect();
+            } catch (e) {}
+            this.currentBgmSource = null;
         }
         this.currentBgmType = null;
     }
 
-    getSE(name, path, volume = 0.80) {
-        if (!this.sePool[name]) {
-            const a = new Audio(path);
-            a.volume = volume;
-            this.sePool[name] = a;
-        }
-        return this.sePool[name];
+    // --- ワンショット効果音再生 (Web Audio API) ---
+    async playSE(url, volume = 0.80) {
+        if (this.isMuted) return;
+        this.init();
+
+        const buffer = await this.loadAudioBuffer(url);
+        if (!buffer) return;
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(volume, this.ctx.currentTime);
+
+        source.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        source.start(0);
     }
 
     // 敵があらわれた時の緊迫エンカウント効果音 (ドラクエ風2回連続リピート)
     playEncounter() {
         if (this.isMuted) return;
         this.init();
-
-        const se1 = this.getSE('encounter', 'bgm/encounter.wav', 0.20);
-        se1.volume = 0.20;
-        se1.currentTime = 0;
-        const p1 = se1.play();
-        if (p1 !== undefined) p1.catch(() => {});
-
-        // 2回目リピート再生 (0.42秒後)
+        this.playSE('bgm/encounter.wav', 0.20);
         setTimeout(() => {
-            const se2 = new Audio('bgm/encounter.wav');
-            se2.volume = 0.20;
-            se2.play().catch(() => {});
+            if (!this.isMuted) {
+                this.playSE('bgm/encounter.wav', 0.20);
+            }
         }, 420);
     }
 
     // 正統派戦闘勝利ファンファーレ (ド-ド-ド-ファ-ソ-ラ-ド！)
     playVictory() {
         this.stopBGM();
-        const v = this.getSE('victory', 'bgm/victory.wav', 0.85);
-        v.currentTime = 0;
-        const p = v.play();
-        if (p !== undefined) p.catch(() => {});
+        this.playSE('bgm/victory.wav', 0.85);
     }
 
     // 宿屋の心温まる宿泊ジングル (ソ-ラ-シ-ド-ソ-ド〜)
     playInn() {
         this.stopBGM();
-        const inn = this.getSE('inn', 'bgm/inn.wav', 0.80);
-        inn.currentTime = 0;
-        const p = inn.play();
-        if (p !== undefined) p.catch(() => {});
+        this.playSE('bgm/inn.wav', 0.80);
     }
 
-    // --- 低遅延・クリアな効果音システム (Web Audio API) ---
+    // --- 低遅延・クリアな電子効果音システム (Web Audio API) ---
     playTextChar() {
         if (this.isMuted) return;
         this.init();
@@ -114,7 +141,6 @@ class SoundEngine {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        // 軽快で心地よい文字送り音
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(880, now);
         gain.gain.setValueAtTime(0.30, now);
