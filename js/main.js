@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 1.0.8';
+        this.version = 'Ver 1.0.9';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス (王様の前に上向きで直立)
