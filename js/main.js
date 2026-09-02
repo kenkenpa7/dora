@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 1.2.3';
+        this.version = 'Ver 1.3.0';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス (王様の前に上向きで直立)
@@ -163,10 +163,10 @@ class Game {
 
         // バトル時の入力
         if (this.state === 'BATTLE') {
-            // 上下移動 (0:たたかう, 1:にげる, 2:じゅもん, 3:どうぐ)
+            // 上移動 (0:たたかう ➡ 1:にげる ➡ 2:じゅもん ➡ 3:どうぐ)
             if (['ArrowUp', 'w', 'W'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex - 2 + 4) % 4; // 上下反転
+                    this.battle.menuIndex = (this.battle.menuIndex - 1 + 4) % 4; // 上移動
                     audio.playCursor();
                 } else if (this.battle.phase === 'SPELL_SELECT') {
                     this.battle.spellIndex = Math.max(0, this.battle.spellIndex - 1);
@@ -174,21 +174,21 @@ class Game {
                 }
             } else if (['ArrowDown', 's', 'S'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex + 2) % 4; // 上下移動
+                    this.battle.menuIndex = (this.battle.menuIndex + 1) % 4; // 下移動
                     audio.playCursor();
                 } else if (this.battle.phase === 'SPELL_SELECT') {
                     this.battle.spellIndex = Math.min(this.player.spells.length - 1, this.battle.spellIndex + 1);
                     audio.playCursor();
                 }
-            // 左右移動
+            // 左右キー（縦一列メニューでも操作しやすいよう上/下に連動）
             } else if (['ArrowLeft', 'a', 'A'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex % 2 === 1) ? this.battle.menuIndex - 1 : this.battle.menuIndex + 1;
+                    this.battle.menuIndex = (this.battle.menuIndex - 1 + 4) % 4;
                     audio.playCursor();
                 }
             } else if (['ArrowRight', 'd', 'D'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex % 2 === 0) ? this.battle.menuIndex + 1 : this.battle.menuIndex - 1;
+                    this.battle.menuIndex = (this.battle.menuIndex + 1) % 4;
                     audio.playCursor();
                 }
             } else if (['Enter', ' ', 'z', 'Z'].includes(key)) {
@@ -666,36 +666,36 @@ class Game {
     }
 
     renderStatusWindow() {
-        const w = 130;
-        const h = 110;
+        const w = 145;
+        const h = 125;
         gfx.drawWindow(this.ctx, 10, 10, w, h);
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 13px monospace';
+        this.ctx.font = 'bold 14px monospace';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`LV : ${this.player.level}`, 24, 32);
-        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 24, 52);
-        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 24, 72);
-        this.ctx.fillText(`G  : ${this.player.gold} G`, 24, 92);
-        this.ctx.fillText(`E  : ${this.player.exp}`, 24, 110);
+        this.ctx.fillText(`LV : ${this.player.level}`, 24, 35);
+        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 24, 57);
+        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 24, 79);
+        this.ctx.fillText(`G  : ${this.player.gold} G`, 24, 101);
+        this.ctx.fillText(`E  : ${this.player.exp}`, 24, 121);
     }
 
     renderDialogWindow() {
         const w = this.canvas.width - 24;
-        const h = 120;
+        const h = 124;
         const x = 12;
         const y = this.canvas.height - h - 14;
         gfx.drawWindow(this.ctx, x, y, w, h);
 
         this.ctx.fillStyle = '#ffcc00';
-        this.ctx.font = 'bold 14px monospace';
+        this.ctx.font = 'bold 15px monospace';
         this.ctx.textAlign = 'left';
         if (this.talkingNpc) {
-            this.ctx.fillText(`【${this.talkingNpc.name}】`, x + 16, y + 24);
+            this.ctx.fillText(`【${this.talkingNpc.name}】`, x + 16, y + 26);
         }
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '14px monospace';
+        this.ctx.font = '15px monospace';
 
         // 自動改行処理 (最大幅に合わせて複数行描画)
         const maxWidth = w - 40;
@@ -718,8 +718,8 @@ class Game {
             lines.push(currentLine);
         }
 
-        const startY = y + 48;
-        const lineHeight = 22;
+        const startY = y + 52;
+        const lineHeight = 24;
         lines.forEach((line, idx) => {
             this.ctx.fillText(line, x + 16, startY + idx * lineHeight);
         });
@@ -762,27 +762,27 @@ class Game {
         }
 
         // 2. ステータスウィンドウ (最前面レイヤー：左上)
-        gfx.drawWindow(this.ctx, 16, 20, 130, 115);
+        gfx.drawWindow(this.ctx, 16, 16, 140, 135);
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 13px monospace';
+        this.ctx.font = 'bold 14px monospace';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(this.player.name, 28, 42);
+        this.ctx.fillText(this.player.name, 28, 40);
         this.ctx.fillText(`LV : ${this.player.level}`, 28, 64);
-        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 28, 86);
-        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 28, 106);
-        this.ctx.fillText(`草 : ${this.player.herbs}こ`, 28, 124);
+        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 28, 88);
+        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 28, 110);
+        this.ctx.fillText(`草 : ${this.player.herbs}こ`, 28, 130);
 
-        // 3. コマンドウィンドウ (最前面レイヤー：左下)
-        gfx.drawWindow(this.ctx, 16, 160, 145, 95);
+        // 3. コマンドウィンドウ (最前面レイヤー：左側・縦一列配置)
+        gfx.drawWindow(this.ctx, 16, 160, 130, 145);
         const commands = [
-            { label: 'たたかう', x: 38, y: 188 }, // 0: 左上
-            { label: 'にげる',   x: 95, y: 188 }, // 1: 右上
-            { label: 'じゅもん', x: 38, y: 220 }, // 2: 左下
-            { label: 'どうぐ',   x: 95, y: 220 }  // 3: 右下
+            { label: 'たたかう', x: 42, y: 190 }, // 0: 1段目
+            { label: 'にげる',   x: 42, y: 222 }, // 1: 2段目
+            { label: 'じゅもん', x: 42, y: 254 }, // 2: 3段目
+            { label: 'どうぐ',   x: 42, y: 286 }  // 3: 4段目
         ];
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '13px monospace';
+        this.ctx.font = 'bold 14px monospace';
         commands.forEach(cmd => {
             this.ctx.fillText(cmd.label, cmd.x, cmd.y);
         });
@@ -790,17 +790,18 @@ class Game {
         // コマンド選択カーソル
         if (b.phase === 'COMMAND') {
             const cur = commands[b.menuIndex];
-            this.ctx.fillText('▶', cur.x - 14, cur.y);
+            this.ctx.fillText('▶', cur.x - 16, cur.y);
         }
 
-        // 呪文選択ウィンドウ (開いている場合)
+        // 呪文選択ウィンドウ (開いている場合：コマンドの右側に表示)
         if (b.phase === 'SPELL_SELECT') {
-            gfx.drawWindow(this.ctx, 175, 160, 145, 95);
+            gfx.drawWindow(this.ctx, 155, 160, 150, 145);
+            this.ctx.font = 'bold 14px monospace';
             this.player.spells.forEach((sp, idx) => {
                 this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillText(sp, 205, 188 + idx * 22);
+                this.ctx.fillText(sp, 185, 190 + idx * 28);
             });
-            this.ctx.fillText('▶', 190, 188 + b.spellIndex * 22);
+            this.ctx.fillText('▶', 170, 190 + b.spellIndex * 28);
         }
 
         // メッセージウィンドウ (下部にゆったり配置)
@@ -809,7 +810,7 @@ class Game {
         gfx.drawWindow(this.ctx, 16, msgY, this.canvas.width - 32, msgH);
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '14px monospace';
+        this.ctx.font = '15px monospace';
         this.ctx.fillText(b.currentMessage, 32, msgY + 38);
 
         // バトル送りマーク
