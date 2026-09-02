@@ -1,0 +1,17 @@
+# ローカル専用ドキュメント・内部資料（Git追跡除外）
+AGENTS.md
+README.md
+プロジェクト開発全記録_引継ぎ書.md
+バージョン履歴.md
+*.md
+
+# ローカル専用スクリプト
+compress_bgm.py
+update_changelog.py
+*.py
+__pycache__/
+
+# 音源バックアップフォルダ
+BGM元サイズ/
+BGM_*バックアップ/
+BGM_*/
