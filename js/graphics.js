@@ -79,13 +79,37 @@ class GraphicsEngine {
             npc1:   ['#000000', '#e68a00', '#ffb347', '#ffcca3', '#ffffff', '#2a6ebb', '#4a94e8', '#b82a2a'],
             npc2:   ['#000000', '#2d882d', '#44b844', '#ffcca3', '#ffffff', '#633812', '#96551b', '#ffcc00'],
             oldman: ['#000000', '#737380', '#a2a2b0', '#ffffff', '#ffcca3', '#524035', '#7a6050', '#885522'],
-            mapDragon: ['#000000', '#166e2c', '#229e41', '#38cc5e', '#ffcc00', '#ff2222', '#ffffff', '#0f471d']
+            mapDragon: ['#000000', '#166e2c', '#229e41', '#38cc5e', '#ffcc00', '#ff2222', '#ffffff', '#0f471d'],
+            desert: ['#000000', '#d4aa6a', '#e6c28a', '#f5dba8', '#b88a4a']
         };
         this.PAL = PAL;
     }
 
     getTilePattern(tileType) {
         switch (tileType) {
+            case TILE.DESERT: // 砂漠
+                return {
+                    pal: this.PAL.desert,
+                    data: [
+                        "1211211112112111",
+                        "2222221222222212",
+                        "1232122212321222",
+                        "1121112111211121",
+                        "1111211111112111",
+                        "2122222121222221",
+                        "2223212222232122",
+                        "1212111212121112",
+                        "1211211112112111",
+                        "2222221222222212",
+                        "1232122212321222",
+                        "1121112111211121",
+                        "1111211111112111",
+                        "2122222121222221",
+                        "2223212222232122",
+                        "1212111212121112"
+                    ]
+                };
+
             case TILE.GRASS: // 草原
                 return {
                     pal: this.PAL.grass,
@@ -1351,28 +1375,34 @@ class GraphicsEngine {
     }
 
     drawMonster(ctx, enemyId, x, y, size = 160) {
-        const key = `enemy_${enemyId}`;
-        if (!this.cache[key]) {
-            const pat = this.getMonsterPattern(enemyId);
-            if (pat) {
-                this.cache[key] = this.buildPattern(pat.pal, pat.data, pat.scale || 3);
-            }
-        }
-        if (this.cache[key]) {
-            const img = this.cache[key];
-            ctx.drawImage(img, x, y, size, (size * img.height) / img.width);
-        }
-    }
-
-
-    drawMonster(ctx, enemyId, x, y, size = 160) {
-        const img = this.monsterImages[enemyId];
+        const enemyData = (typeof ENEMIES !== 'undefined' && ENEMIES[enemyId]) ? ENEMIES[enemyId] : {};
+        const baseSprite = enemyData.sprite || enemyId;
+        const img = this.monsterImages[baseSprite] || this.monsterImages[enemyId];
+        
         if (img && img.complete && img.naturalWidth > 0) {
+            ctx.save();
             ctx.imageSmoothingEnabled = false; // シャープなピクセル感を維持
+
+            // 色違い・ボスのフィルタ演出
+            if (enemyData.tint === 'red') {
+                ctx.filter = 'hue-rotate(140deg) saturate(2.2)'; // 赤系 (スライムベス、レッドドラゴン)
+            } else if (enemyData.tint === 'gold') {
+                ctx.filter = 'hue-rotate(60deg) saturate(2.5) brightness(1.2)'; // 金系 (メイジドラキー、ゴールドマン)
+            } else if (enemyData.tint === 'purple') {
+                ctx.filter = 'hue-rotate(260deg) saturate(1.8)'; // 紫系 (しりょうのきし)
+            } else if (enemyData.tint === 'dark') {
+                ctx.filter = 'hue-rotate(290deg) brightness(0.8) contrast(1.4)'; // 闇系 (だいまどう)
+            } else if (enemyData.tint === 'black') {
+                ctx.filter = 'grayscale(100%) brightness(0.6) contrast(1.6)'; // 漆黒系 (あくまのきし)
+            } else if (enemyData.tint === 'boss') {
+                ctx.filter = 'hue-rotate(230deg) saturate(2) contrast(1.5) drop-shadow(0 0 12px #ff0055)'; // 大ボス真・竜王 (禍々しい暗黒オーラ)
+            }
+
             const aspect = img.naturalHeight / img.naturalWidth;
             const drawW = size;
             const drawH = size * aspect;
             ctx.drawImage(img, x, y, drawW, drawH);
+            ctx.restore();
         }
     }
 

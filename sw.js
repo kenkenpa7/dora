@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dora-pwa-v1.3.0';
+const CACHE_NAME = 'dora-pwa-v2.0.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

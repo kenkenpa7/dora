@@ -1,4 +1,4 @@
-// メインゲームコントローラー & ループ
+// メインゲームコントローラー & ループ (v2.0.0 完全版)
 
 class Game {
     constructor() {
@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 1.3.0';
+        this.version = 'Ver 2.0.0';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス (王様の前に上向きで直立)
@@ -23,12 +23,28 @@ class Game {
             maxHp: 20,
             mp: 0,
             maxMp: 0,
-            attack: 10,
-            defense: 6,
+            attack: 8,
+            defense: 4,
             agility: 5,
-            gold: 50,
+            gold: 60,
+            equipment: {
+                weapon: 'ひのきのぼう',
+                shield: null
+            },
+            items: {
+                'やくそう': 2,
+                'まほうのせいすい': 0,
+                'せかいじゅのは': 0
+            },
             herbs: 2,
             spells: []
+        };
+
+        // ストーリー進行フラグ
+        this.flags = {
+            boss1_cleared: false, // 小ボス: ドラゴン撃破 -> 銀の鍵
+            boss2_cleared: false, // 中ボス: ゴーレム撃破 -> 虹のしずく
+            boss3_cleared: false  // 大ボス: 真・竜王撃破 -> エンディング
         };
 
         this.currentMap = MAPS.castle;
@@ -83,7 +99,6 @@ class Game {
                 this.keys[keyName] = false;
             };
 
-            // pointer events (タッチとマウスの両方を確実にカバー)
             btn.addEventListener('pointerdown', handlePress);
             btn.addEventListener('pointerup', handleRelease);
             btn.addEventListener('pointerleave', handleRelease);
@@ -121,7 +136,6 @@ class Game {
     }
 
     startGame() {
-        // オープニング専用BGM (序曲・ファンファーレマーチ) を開始と完全に同時に即時再生
         audio.playBGM('opening');
         audio.playSelect();
 
@@ -135,15 +149,14 @@ class Game {
         const kingNpc = this.currentMap.npcs.find(n => n.id === 'king') || { name: '王様' };
         this.talkingNpc = kingNpc;
         this.dialogQueue = [
-            { text: 'おお、勇者よ！よくぞ参った！', isOpening: true },
-            { text: '魔王に操られた巨大な「ドラゴン」が、南の洞窟に潜み、世界を恐怖に陥れておる。', isOpening: true },
-            { text: 'まずは東の町で準備を整え、スライム等を倒してレベルを上げ、「ギラ」などの呪文を覚えるのじゃ！', isOpening: true },
-            { text: 'さあ 行くのじゃ、勇者よ！ お前の旅立ちに 光あれ！！', isOpening: true }
+            { text: 'おお勇者よ！よくぞ参った！', isOpening: true },
+            { text: '魔王が解き放った凶悪な魔物たちが世界を脅かしておる。', isOpening: true },
+            { text: 'まずは南の【試練の洞窟】に潜む小ボス「ドラゴン」を倒し、【銀の鍵】を手に入れるのじゃ！', isOpening: true },
+            { text: '東の【マイラの町】で武器や盾、やくそうを買い揃えて旅立つが良い！', isOpening: true }
         ];
         this.advanceDialog();
     }
 
-    // 決定キー/キャンセルキーのワンショット入力ハンドラ
     handleActionInput(key) {
         audio.init();
 
@@ -161,12 +174,11 @@ class Game {
             return;
         }
 
-        // バトル時の入力
+        // バトル時の入力 (縦一列コマンド)
         if (this.state === 'BATTLE') {
-            // 上移動 (0:たたかう ➡ 1:にげる ➡ 2:じゅもん ➡ 3:どうぐ)
             if (['ArrowUp', 'w', 'W'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex - 1 + 4) % 4; // 上移動
+                    this.battle.menuIndex = (this.battle.menuIndex - 1 + 4) % 4;
                     audio.playCursor();
                 } else if (this.battle.phase === 'SPELL_SELECT') {
                     this.battle.spellIndex = Math.max(0, this.battle.spellIndex - 1);
@@ -174,13 +186,12 @@ class Game {
                 }
             } else if (['ArrowDown', 's', 'S'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex + 1) % 4; // 下移動
+                    this.battle.menuIndex = (this.battle.menuIndex + 1) % 4;
                     audio.playCursor();
                 } else if (this.battle.phase === 'SPELL_SELECT') {
                     this.battle.spellIndex = Math.min(this.player.spells.length - 1, this.battle.spellIndex + 1);
                     audio.playCursor();
                 }
-            // 左右キー（縦一列メニューでも操作しやすいよう上/下に連動）
             } else if (['ArrowLeft', 'a', 'A'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
                     this.battle.menuIndex = (this.battle.menuIndex - 1 + 4) % 4;
@@ -206,14 +217,6 @@ class Game {
             return;
         }
 
-        // エンディング時の入力
-        if (this.state === 'ENDING') {
-            if (['Enter', ' ', 'z', 'Z'].includes(key)) {
-                location.reload();
-            }
-            return;
-        }
-
         // 会話時の入力
         if (this.state === 'TALK') {
             if (['Enter', ' ', 'z', 'Z'].includes(key)) {
@@ -222,7 +225,7 @@ class Game {
             } else if (['Escape', 'x', 'X'].includes(key)) {
                 audio.playCancel();
                 this.dialogQueue = [];
-                this.advanceDialog(); // 会話をスキップして閉じる
+                this.advanceDialog();
             }
             return;
         }
@@ -249,15 +252,16 @@ class Game {
         if (npc) {
             audio.playSelect();
             if (npc.isBoss) {
-                // ボス戦突入
-                this.startBossFight();
+                this.state = 'BATTLE';
+                this.battle.startBattle(npc.enemyId || 'dragon');
                 return;
             }
 
             this.state = 'TALK';
             this.talkingNpc = npc;
+
             if (npc.isInn) {
-                // 宿屋フロー: 挨拶 -> 宿泊(ジングル+暗転) -> 目覚め全快
+                // 宿屋フロー
                 this.dialogQueue = [
                     { text: '旅の宿屋へようこそ！ ひと晩 泊まっていきなされ。' },
                     { 
@@ -278,6 +282,16 @@ class Game {
                     },
                     { text: 'おはようございます！ HPと MPが ぜんかいふく した！ またどうぞ！' }
                 ];
+            } else if (npc.isShop) {
+                // ショップ売買フロー
+                this.handleShopInteraction(npc);
+            } else if (npc.reqFlag) {
+                // フラグ連動会話 (関所の兵士など)
+                if (this.flags[npc.reqFlag]) {
+                    this.dialogQueue = (npc.passDialog || npc.dialog).map(t => ({ text: t }));
+                } else {
+                    this.dialogQueue = npc.dialog.map(t => ({ text: t }));
+                }
             } else {
                 this.dialogQueue = npc.dialog.map(t => ({ text: t }));
             }
@@ -297,22 +311,28 @@ class Game {
                 const tile = this.currentMap.data[pos.y][pos.x];
                 if (tile === TILE.CHEST) {
                     audio.playLevelUp();
-                    this.currentMap.data[pos.y][pos.x] = TILE.CHEST_OPEN; // 開いた状態に変更
+                    this.currentMap.data[pos.y][pos.x] = TILE.CHEST_OPEN;
 
                     const chestData = (this.currentMap.chests || []).find(c => c.x === pos.x && c.y === pos.y);
                     this.state = 'TALK';
                     this.talkingNpc = { name: 'たからばこ' };
 
                     if (chestData) {
-                        if (chestData.item === 'やくそう') {
-                            this.player.herbs += (chestData.count || 1);
+                        if (chestData.weapon) {
+                            this.player.equipment.weapon = chestData.weapon;
+                        }
+                        if (chestData.shield) {
+                            this.player.equipment.shield = chestData.shield;
+                        }
+                        if (chestData.item) {
+                            this.player.items[chestData.item] = (this.player.items[chestData.item] || 0) + (chestData.count || 1);
                         }
                         if (chestData.gold) {
                             this.player.gold += chestData.gold;
                         }
                         this.dialogQueue = [{ text: chestData.msg }];
                     } else {
-                        this.player.herbs += 1;
+                        this.player.items['やくそう'] = (this.player.items['やくそう'] || 0) + 1;
                         this.dialogQueue = [{ text: 'たからばこを あけた！ やくそうを てにいれた！' }];
                     }
 
@@ -330,8 +350,51 @@ class Game {
         }
     }
 
+    // ショップ（武器・防具・道具）の購入処理
+    handleShopInteraction(npc) {
+        const items = npc.shopItems || [];
+        this.dialogQueue = [];
+
+        for (const itemName of items) {
+            // 武器チェック
+            if (WEAPONS[itemName]) {
+                const w = WEAPONS[itemName];
+                if (this.player.equipment.weapon === itemName) {
+                    this.dialogQueue.push({ text: `【${w.name}】は すでに装備していますぞ！` });
+                } else if (this.player.gold >= w.price) {
+                    this.player.gold -= w.price;
+                    this.player.equipment.weapon = itemName;
+                    this.dialogQueue.push({ text: `まいど！【${w.name}】(${w.price}G)を 買い、さっそく装備した！(攻撃力+${w.attack})` });
+                } else {
+                    this.dialogQueue.push({ text: `【${w.name}】は ${w.price}G ですぞ。ゴールドが たりないようです！` });
+                }
+            // 盾チェック
+            } else if (SHIELDS[itemName]) {
+                const s = SHIELDS[itemName];
+                if (this.player.equipment.shield === itemName) {
+                    this.dialogQueue.push({ text: `【${s.name}】は すでに装備していますぞ！` });
+                } else if (this.player.gold >= s.price) {
+                    this.player.gold -= s.price;
+                    this.player.equipment.shield = itemName;
+                    this.dialogQueue.push({ text: `まいど！【${s.name}】(${s.price}G)を 買い、さっそく装備した！(防御力+${s.defense})` });
+                } else {
+                    this.dialogQueue.push({ text: `【${s.name}】は ${s.price}G ですぞ。ゴールドが たりないようです！` });
+                }
+            // 消費アイテムチェック
+            } else if (ITEMS[itemName]) {
+                const it = ITEMS[itemName];
+                if (this.player.gold >= it.price) {
+                    this.player.gold -= it.price;
+                    this.player.items[itemName] = (this.player.items[itemName] || 0) + 1;
+                    this.dialogQueue.push({ text: `まいど！【${it.name}】(${it.price}G)を 1こ 手に入れた！ (所持: ${this.player.items[itemName]}こ)` });
+                } else {
+                    this.dialogQueue.push({ text: `【${it.name}】は ${it.price}G です。ゴールドが たりません！` });
+                }
+            }
+        }
+    }
+
     advanceDialog() {
-        // すでに文字送り中の場合は一瞬で全文表示
         if (this.dialogTypingTimer) {
             clearInterval(this.dialogTypingTimer);
             this.dialogTypingTimer = null;
@@ -350,7 +413,6 @@ class Game {
                 next.action();
             }
 
-            // 1文字ずつタイプライター表示＋効果音
             this.dialogTypingTimer = setInterval(() => {
                 if (charIndex < this.fullDialog.length) {
                     const char = this.fullDialog[charIndex];
@@ -373,18 +435,13 @@ class Game {
                 this.dialogTypingTimer = null;
             }
             if (this.lastDialogItem && this.lastDialogItem.isOpening) {
-                audio.playBGM('castle'); // オープニング会話終了で王宮BGMへ
+                audio.playBGM('castle');
             } else if (this.talkingNpc && this.talkingNpc.isInn) {
                 audio.playBGM(this.currentMap.bgm);
             }
             this.talkingNpc = null;
             this.lastDialogItem = null;
         }
-    }
-
-    startBossFight() {
-        this.state = 'BATTLE';
-        this.battle.startBattle('dragon');
     }
 
     // 移動処理
@@ -415,7 +472,6 @@ class Game {
             const nextX = this.player.x + dx;
             const nextY = this.player.y + dy;
 
-            // マップ範囲内 & 通行可能チェック
             if (this.isWalkable(nextX, nextY)) {
                 this.player.x = nextX;
                 this.player.y = nextY;
@@ -423,20 +479,17 @@ class Game {
                 this.player.stepCount++;
                 this.lastMoveTime = timestamp;
 
-                // 扉チェック
                 if (this.currentMap.data[nextY][nextX] === TILE.DOOR) {
                     audio.playDoor();
                 }
 
-                // ポータル移動チェック
                 this.checkPortals();
 
-                // ランダムエンカウント判定 (フィールドまたは洞窟)
                 if (this.currentMap.encounters && this.currentMap.encounters.length > 0) {
                     this.checkRandomEncounter();
                 }
             } else {
-                this.lastMoveTime = timestamp; // 向き変更のみ
+                this.lastMoveTime = timestamp;
             }
         }
     }
@@ -446,7 +499,7 @@ class Game {
         const tileType = this.currentMap.data[y][x];
         if (!PASSABLE[tileType]) return false;
 
-        // NPCが立っているマスは通行不可
+        // NPCがいるマスは通行不可
         if (this.currentMap.npcs.some(n => n.x === x && n.y === y)) return false;
 
         return true;
@@ -455,6 +508,11 @@ class Game {
     checkPortals() {
         const portal = this.currentMap.portals.find(p => p.x === this.player.x && p.y === this.player.y);
         if (portal) {
+            // 条件フラグチェック (関所・虹の橋など)
+            if (portal.reqFlag && !this.flags[portal.reqFlag]) {
+                return; // 通行不可
+            }
+
             audio.playStairs();
             this.currentMap = MAPS[portal.targetMap];
             this.player.x = portal.targetX;
@@ -464,7 +522,6 @@ class Game {
     }
 
     checkRandomEncounter() {
-        // 歩行時のエンカウント率 (約10%)
         if (Math.random() < 0.11) {
             const table = this.currentMap.encounters;
             const roll = Math.random() * 100;
@@ -527,7 +584,6 @@ class Game {
             return;
         }
 
-        // 通常マップ探索画面
         this.renderMap();
         this.renderStatusWindow();
 
@@ -535,7 +591,6 @@ class Game {
             this.renderDialogWindow();
         }
 
-        // 宿屋の画面暗転エフェクト
         if (this.innFade > 0) {
             this.ctx.fillStyle = `rgba(0, 0, 0, ${this.innFade})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -552,90 +607,59 @@ class Game {
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '16px monospace';
-        this.ctx.fillText('〜 レトロRPG プロトタイプ 〜', this.canvas.width / 2, 175);
+        this.ctx.fillText('〜 レトロRPG 完全版 v2.0 〜', this.canvas.width / 2, 175);
 
-        // スライムのぽよんぽよんバウンスアニメーション
         const time = Date.now() / 1000;
-        const bounceCycle = (time * 3.8) % Math.PI; // リズミカルな跳ね周期
-        const jumpHeight = Math.sin(bounceCycle) * 24; // 24pxジャンプ
+        const bounceCycle = (time * 3.8) % Math.PI;
+        const jumpHeight = Math.sin(bounceCycle) * 24;
 
-        // スカッシュ＆ストレッチ（着地で潰れ、頂点で伸びる）
-        let scaleX = 1.0;
-        let scaleY = 1.0;
-        if (jumpHeight < 3) {
-            scaleX = 1.20; // 着地で横に「ぽよん」
-            scaleY = 0.80;
-        } else if (jumpHeight > 16) {
-            scaleX = 0.90; // 上昇中に縦に「きゅっ」
-            scaleY = 1.10;
-        }
+        gfx.drawMonster(this.ctx, 'slime', this.canvas.width / 2 - 45, 230 - jumpHeight, 90);
 
-        const slimeCenterX = this.canvas.width / 2;
-        const groundY = 380; // 着地ライン
-        const slimeSize = 100;
-
-        // 足元の影（ジャンプに合わせて伸縮）
-        this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-        this.ctx.beginPath();
-        const shadowW = 34 * (1 - jumpHeight / 48);
-        const shadowH = 9 * (1 - jumpHeight / 58);
-        this.ctx.ellipse(slimeCenterX, groundY + 2, Math.max(8, shadowW), Math.max(3, shadowH), 0, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.restore();
-
-        // スライム本体の変形描画
-        this.ctx.save();
-        this.ctx.translate(slimeCenterX, groundY - jumpHeight - (slimeSize * scaleY) / 2);
-        this.ctx.scale(scaleX, scaleY);
-        gfx.drawMonster(this.ctx, 'slime', -slimeSize / 2, -slimeSize / 2, slimeSize);
-        this.ctx.restore();
-
-        this.ctx.fillStyle = '#00ffcc';
-        this.ctx.font = '16px monospace';
         const blink = Math.floor(Date.now() / 400) % 2 === 0;
         if (blink) {
-            this.ctx.fillText('▶ 画面をタップしてスタート', this.canvas.width / 2, 490);
+            this.ctx.fillStyle = '#00ffcc';
+            this.ctx.font = 'bold 18px monospace';
+            this.ctx.fillText('PRESS A / START', this.canvas.width / 2, 430);
         }
 
-        // バージョン表示（右上に配置）
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 12px monospace';
-        this.ctx.textAlign = 'right';
-        this.ctx.fillText(this.version, this.canvas.width - 40, 55);
+        this.ctx.fillStyle = '#8888aa';
+        this.ctx.font = '13px monospace';
+        this.ctx.fillText('画面タップ または Aボタンで冒険開始', this.canvas.width / 2, 470);
     }
 
     renderEnding() {
-        gfx.drawWindow(this.ctx, 20, 40, this.canvas.width - 40, this.canvas.height - 80);
+        gfx.drawWindow(this.ctx, 20, 30, this.canvas.width - 40, this.canvas.height - 60);
 
-        this.ctx.fillStyle = '#ffdd44';
+        this.ctx.fillStyle = '#ffcc00';
         this.ctx.font = 'bold 24px monospace';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME CLEAR !', this.canvas.width / 2, 120);
+        this.ctx.fillText('👑 THE END 👑', this.canvas.width / 2, 110);
 
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '14px monospace';
-        this.ctx.fillText('見事にドラゴンを討ち滅ぼし、', this.canvas.width / 2, 190);
-        this.ctx.fillText('アレフガルドに再び光が戻った！', this.canvas.width / 2, 230);
-        this.ctx.fillText('勇者の伝説は 永遠に語り継がれるだろう...', this.canvas.width / 2, 270);
+        this.ctx.font = 'bold 16px monospace';
+        this.ctx.fillText('世界に真の平和が戻った！', this.canvas.width / 2, 160);
 
-        this.ctx.fillStyle = '#00ffcc';
-        this.ctx.font = '15px monospace';
+        this.ctx.font = '14px monospace';
+        this.ctx.fillText('小ボス「ドラゴン」を倒し【銀の鍵】を得て、', this.canvas.width / 2, 210);
+        this.ctx.fillText('中ボス「ゴーレム」を倒し【虹のしずく】を架け、', this.canvas.width / 2, 240);
+        this.ctx.fillText('大ボス【真・竜王】を見事討伐した勇者よ！', this.canvas.width / 2, 270);
+        this.ctx.fillText('あなたの伝説は 永遠に語り継がれるだろう！', this.canvas.width / 2, 300);
+
+        gfx.drawMonster(this.ctx, 'dragon_boss', this.canvas.width / 2 - 60, 340, 120);
+
         const blink = Math.floor(Date.now() / 400) % 2 === 0;
         if (blink) {
-            this.ctx.fillText('▶ 画面をタップして最初からやり直す', this.canvas.width / 2, 420);
+            this.ctx.fillStyle = '#00ffcc';
+            this.ctx.font = 'bold 16px monospace';
+            this.ctx.fillText('画面タップで タイトルへ戻る', this.canvas.width / 2, 530);
         }
-
-        this.ctx.fillStyle = '#aaaaaa';
-        this.ctx.font = '12px monospace';
-        this.ctx.fillText('（[Aボタン] でも可能）', this.canvas.width / 2, 460);
     }
 
     renderMap() {
         const tw = gfx.tileSize;
-        // カメラの中心をプレイヤーに合わせる（縦長640px画面全体に広大描画）
         const centerX = Math.floor(this.canvas.width / 2 - tw / 2);
         const centerY = Math.floor(this.canvas.height / 2 - tw / 2);
+
         const offsetX = centerX - this.player.x * tw;
         const offsetY = centerY - this.player.y * tw;
 
@@ -651,7 +675,7 @@ class Game {
             }
         }
 
-        // NPC描画（ドラクエ風ピコピコアニメーション）
+        // NPC描画
         const npcFrame = Math.floor(Date.now() / 450) % 2;
         for (const npc of this.currentMap.npcs) {
             const screenX = offsetX + npc.x * tw;
@@ -661,23 +685,27 @@ class Game {
             }
         }
 
-        // プレイヤー描画 (常に中央)
+        // プレイヤー描画
         gfx.drawCharacter(this.ctx, 'hero', this.player.dir, this.player.walkFrame, centerX, centerY);
     }
 
     renderStatusWindow() {
-        const w = 145;
-        const h = 125;
+        const w = 150;
+        const h = 135;
         gfx.drawWindow(this.ctx, 10, 10, w, h);
+
+        const weaponName = this.player.equipment?.weapon || 'なし';
+        const shieldName = this.player.equipment?.shield || 'なし';
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 14px monospace';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`LV : ${this.player.level}`, 24, 35);
-        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 24, 57);
-        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 24, 79);
-        this.ctx.fillText(`G  : ${this.player.gold} G`, 24, 101);
-        this.ctx.fillText(`E  : ${this.player.exp}`, 24, 121);
+        this.ctx.fillText(`LV : ${this.player.level}`, 22, 32);
+        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 22, 52);
+        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 22, 72);
+        this.ctx.fillText(`G  : ${this.player.gold} G`, 22, 92);
+        this.ctx.fillText(`武 : ${weaponName.slice(0, 5)}`, 22, 112);
+        this.ctx.fillText(`盾 : ${shieldName.slice(0, 5)}`, 22, 132);
     }
 
     renderDialogWindow() {
@@ -697,7 +725,6 @@ class Game {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '15px monospace';
 
-        // 自動改行処理 (最大幅に合わせて複数行描画)
         const maxWidth = w - 40;
         const text = this.currentDialog || '';
         const lines = [];
@@ -724,7 +751,6 @@ class Game {
             this.ctx.fillText(line, x + 16, startY + idx * lineHeight);
         });
 
-        // ページ送り三角マーク
         const blink = Math.floor(Date.now() / 300) % 2 === 0;
         if (blink) {
             this.ctx.fillStyle = '#00ffcc';
@@ -734,51 +760,61 @@ class Game {
 
     renderBattle() {
         const b = this.battle;
-        // 背景
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // 画面フラッシュ演出 (プレイヤー被ダメ等)
         if (b.flashScreen) {
             this.ctx.fillStyle = b.flashColor;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
-        // 1. モンスター描画 (背景レイヤー・縦長画面の中央上部に配置)
+        // 1. モンスター描画 (全14種サイズ定義)
         if (b.enemy && b.enemyHp > 0) {
             const monsterSizes = {
-                slime:    { size: 90,  x: 245, y: 220 },
-                dracky:   { size: 240, x: 200, y: 140 },
-                skeleton: { size: 140, x: 230, y: 110 },
-                wizard:   { size: 180, x: 215, y: 100 },
-                golem:    { size: 300, x: 165, y: 90 },
-                dragon:   { size: 320, x: 155, y: 80 }
+                slime:           { size: 90,  x: 245, y: 220 },
+                slime_red:       { size: 95,  x: 242, y: 215 },
+                dracky:          { size: 240, x: 200, y: 140 },
+                dracky_mage:     { size: 240, x: 200, y: 140 },
+                skeleton:        { size: 140, x: 230, y: 110 },
+                skeleton_knight: { size: 150, x: 225, y: 105 },
+                shadow_knight:   { size: 150, x: 225, y: 105 },
+                wizard:          { size: 180, x: 215, y: 100 },
+                warlock:         { size: 190, x: 210, y: 95 },
+                golem:           { size: 300, x: 165, y: 90 },
+                goldman:         { size: 300, x: 165, y: 90 },
+                dragon:          { size: 320, x: 155, y: 80 },
+                dragon_red:      { size: 330, x: 150, y: 75 },
+                dragon_boss:     { size: 350, x: 140, y: 65 }
             };
             const cfg = monsterSizes[b.enemy.id] || { size: 160, x: 220, y: 120 };
 
             if (!b.enemyFlash) {
-                gfx.drawMonster(this.ctx, b.enemy.sprite, cfg.x, cfg.y, cfg.size);
+                gfx.drawMonster(this.ctx, b.enemy.id, cfg.x, cfg.y, cfg.size);
             }
         }
 
-        // 2. ステータスウィンドウ (最前面レイヤー：左上)
-        gfx.drawWindow(this.ctx, 16, 16, 140, 135);
+        // 2. ステータスウィンドウ (左上)
+        gfx.drawWindow(this.ctx, 16, 16, 145, 140);
+        const herbs = this.player.items['やくそう'] || this.player.herbs || 0;
+        const mpPots = this.player.items['まほうのせいすい'] || 0;
+
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 14px monospace';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(this.player.name, 28, 40);
-        this.ctx.fillText(`LV : ${this.player.level}`, 28, 64);
-        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 28, 88);
-        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 28, 110);
-        this.ctx.fillText(`草 : ${this.player.herbs}こ`, 28, 130);
+        this.ctx.fillText(`LV : ${this.player.level}`, 28, 62);
+        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 28, 84);
+        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 28, 106);
+        this.ctx.fillText(`草:${herbs} 水:${mpPots}`, 28, 128);
+        this.ctx.fillText(`G  : ${this.player.gold} G`, 28, 146);
 
-        // 3. コマンドウィンドウ (最前面レイヤー：左側・縦一列配置)
-        gfx.drawWindow(this.ctx, 16, 160, 130, 145);
+        // 3. コマンドウィンドウ (左側・縦一列配置)
+        gfx.drawWindow(this.ctx, 16, 165, 130, 145);
         const commands = [
-            { label: 'たたかう', x: 42, y: 190 }, // 0: 1段目
-            { label: 'にげる',   x: 42, y: 222 }, // 1: 2段目
-            { label: 'じゅもん', x: 42, y: 254 }, // 2: 3段目
-            { label: 'どうぐ',   x: 42, y: 286 }  // 3: 4段目
+            { label: 'たたかう', x: 42, y: 195 },
+            { label: 'にげる',   x: 42, y: 227 },
+            { label: 'じゅもん', x: 42, y: 259 },
+            { label: 'どうぐ',   x: 42, y: 291 }
         ];
 
         this.ctx.fillStyle = '#ffffff';
@@ -787,24 +823,23 @@ class Game {
             this.ctx.fillText(cmd.label, cmd.x, cmd.y);
         });
 
-        // コマンド選択カーソル
         if (b.phase === 'COMMAND') {
             const cur = commands[b.menuIndex];
             this.ctx.fillText('▶', cur.x - 16, cur.y);
         }
 
-        // 呪文選択ウィンドウ (開いている場合：コマンドの右側に表示)
+        // 呪文選択ウィンドウ
         if (b.phase === 'SPELL_SELECT') {
-            gfx.drawWindow(this.ctx, 155, 160, 150, 145);
+            gfx.drawWindow(this.ctx, 155, 165, 150, 145);
             this.ctx.font = 'bold 14px monospace';
             this.player.spells.forEach((sp, idx) => {
                 this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillText(sp, 185, 190 + idx * 28);
+                this.ctx.fillText(sp, 185, 195 + idx * 24);
             });
-            this.ctx.fillText('▶', 170, 190 + b.spellIndex * 28);
+            this.ctx.fillText('▶', 170, 195 + b.spellIndex * 24);
         }
 
-        // メッセージウィンドウ (下部にゆったり配置)
+        // メッセージウィンドウ (下部)
         const msgH = 130;
         const msgY = this.canvas.height - msgH - 16;
         gfx.drawWindow(this.ctx, 16, msgY, this.canvas.width - 32, msgH);
@@ -813,7 +848,6 @@ class Game {
         this.ctx.font = '15px monospace';
         this.ctx.fillText(b.currentMessage, 32, msgY + 38);
 
-        // バトル送りマーク
         if (b.currentMessage && b.phase !== 'COMMAND' && b.phase !== 'SPELL_SELECT') {
             const blink = Math.floor(Date.now() / 300) % 2 === 0;
             if (blink) {

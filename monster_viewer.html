@@ -352,14 +352,25 @@
     <script src="js/graphics.js"></script>
 
     <script>
-        // モンスターごとのデフォルト設定
+        // モンスターごとのデフォルト設定 (全14種)
         const monsterConfigs = {
-            slime:    { size: 60,  y: 130, autoX: false, x: 250, icon: '💧', desc: '小型・最序盤モンスター' },
-            dracky:   { size: 225, y: 72,  autoX: false, x: 196, icon: '🦇', desc: '飛行型モンスター' },
-            skeleton: { size: 110, y: 46,  autoX: false, x: 226, icon: '💀', desc: '中型アンデッド' },
-            wizard:   { size: 150, y: 44,  autoX: false, x: 216, icon: '🧙', desc: '呪文使いモンスター' },
-            golem:    { size: 315, y: 16,  autoX: false, x: 162, icon: '🗿', desc: '大型岩石モンスター' },
-            dragon:   { size: 290, y: 52,  autoX: false, x: 166, icon: '🐲', desc: '超大型ボスドラゴン' }
+            // 第1章
+            slime:           { size: 90,  y: 220, autoX: false, x: 245, icon: '💧', desc: '小型・最序盤モンスター' },
+            dracky:          { size: 240, y: 140, autoX: false, x: 200, icon: '🦇', desc: '素早い飛行型モンスター' },
+            slime_red:       { size: 95,  y: 215, autoX: false, x: 242, icon: '🔴', desc: 'スライムベス (赤スライム)' },
+            skeleton:        { size: 140, y: 110, autoX: false, x: 230, icon: '💀', desc: '剣を持つがいこつ戦士' },
+            dragon:          { size: 320, y: 80,  autoX: false, x: 155, icon: '🐲', desc: '小ボス: グリーンドラゴン' },
+            // 第2章
+            wizard:          { size: 180, y: 100, autoX: false, x: 215, icon: '🧙', desc: 'ギラを使うまほうつかい' },
+            dracky_mage:     { size: 240, y: 140, autoX: false, x: 200, icon: '🌟', desc: 'メイジドラキー (黄金ドラキー)' },
+            skeleton_knight: { size: 150, y: 105, autoX: false, x: 225, icon: '⚔️', desc: 'しりょうのきし (痛恨の一撃)' },
+            warlock:         { size: 190, y: 95,  autoX: false, x: 210, icon: '🔮', desc: 'だいまどう (ベギラマ使い)' },
+            golem:           { size: 300, y: 90,  autoX: false, x: 165, icon: '🗿', desc: '中ボス: 巨大岩石ゴーレム' },
+            // 第3章
+            goldman:         { size: 300, y: 90,  autoX: false, x: 165, icon: '💰', desc: 'ゴールドマン (大量Gボーナス)' },
+            shadow_knight:   { size: 150, y: 105, autoX: false, x: 225, icon: '🛡️', desc: 'あくまのきし (漆黒の守護騎士)' },
+            dragon_red:      { size: 330, y: 75,  autoX: false, x: 150, icon: '🔥', desc: 'レッドドラゴン (激しい炎)' },
+            dragon_boss:     { size: 350, y: 65,  autoX: false, x: 140, icon: '👑', desc: '大ボス: 真・竜王 (2回行動・灼熱火炎)' }
         };
 
         let selectedId = 'slime';
@@ -438,8 +449,7 @@
 
             const enemy = ENEMIES[selectedId] || { name: selectedId };
             document.getElementById('codeOutput').innerText = 
-`// ${enemy.name} の表示設定
-${selectedId}: {
+`${selectedId}: {
     size: ${cfg.size},
     y: ${cfg.y},
     x: ${cfg.x}
@@ -503,18 +513,18 @@ ${selectedId}: {
             if (enemy) {
                 // 呼吸アニメーション (浮遊/呼吸)
                 let floatY = 0;
-                if (selectedId === 'dracky') {
+                if (selectedId.includes('dracky')) {
                     floatY = Math.sin(animTick * 0.08) * 8; // 羽ばたき
-                } else if (selectedId === 'slime') {
+                } else if (selectedId.includes('slime')) {
                     floatY = Math.sin(animTick * 0.06) * 3; // ぷるぷる
-                } else if (selectedId === 'dragon') {
+                } else if (selectedId.includes('dragon')) {
                     floatY = Math.sin(animTick * 0.04) * 4; // 威圧感
                 }
 
                 const posX = cfg.autoX ? Math.round((480 - cfg.size) / 2) : cfg.x;
                 const posY = cfg.y + floatY;
 
-                gfx.drawMonster(ctx, enemy.sprite || selectedId, posX, posY, cfg.size);
+                gfx.drawMonster(ctx, selectedId, posX, posY, cfg.size);
             }
 
             // 戦闘ウィンドウ (実戦UIのシミュレーション)
@@ -523,9 +533,9 @@ ${selectedId}: {
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 15px monospace';
             ctx.fillText('ゆうしゃ', 32, 42);
-            ctx.fillText('LV  5', 32, 66);
-            ctx.fillText('HP 38/38', 32, 90);
-            ctx.fillText('MP 12/12', 32, 114);
+            ctx.fillText('LV  8', 32, 66);
+            ctx.fillText('HP 145/145', 32, 90);
+            ctx.fillText('MP 78/78', 32, 114);
 
             // コマンド枠
             gfx.drawWindow(ctx, 290, 240, 174, 128);
@@ -556,8 +566,8 @@ ${selectedId}: {
             ctx.lineTo(960, 240);
             ctx.stroke();
 
-            const monsterOrder = ['slime', 'dracky', 'skeleton', 'wizard', 'golem', 'dragon'];
-            let currentX = 30;
+            const monsterOrder = Object.keys(monsterConfigs);
+            let currentX = 20;
 
             monsterOrder.forEach((id) => {
                 const enemy = ENEMIES[id];
