@@ -581,6 +581,7 @@ class BattleSystem {
         this.fullTextMessage = '';
         this.currentMessageItem = null;
         this.messageQueue = [];
+        this.game.safeSteps = 5; // 戦闘終了後5歩間は絶対エンカウントしない
         this.game.state = 'EXPLORE';
         audio.playBGM(this.game.currentMap.bgm);
     }

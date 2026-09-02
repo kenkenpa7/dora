@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.1';
+        this.version = 'Ver 2.0.2';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス
@@ -49,6 +49,7 @@ class Game {
 
         this.currentMap = MAPS.castle;
         this.battle = new BattleSystem(this);
+        this.safeSteps = 5; // 戦闘後の猶予歩数
 
         // 会話・ショップステート
         this.dialogQueue = [];
@@ -571,7 +572,14 @@ class Game {
     }
 
     checkRandomEncounter() {
-        if (Math.random() < 0.11) {
+        if (this.safeSteps > 0) {
+            this.safeSteps--;
+            return;
+        }
+
+        // エンカウント率 5.5% (約18歩に1回)
+        if (Math.random() < 0.055) {
+            this.safeSteps = 5;
             const table = this.currentMap.encounters;
             const roll = Math.random() * 100;
             let acc = 0;

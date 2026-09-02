@@ -274,10 +274,10 @@ const MAPS = {
             [2,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,2],
             [2,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,2],
             [2,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,2],
-            [2,2,2,2,25,25,25,25,25,25,25,25,25,25,2,2,2,2,25,2],
-            [2,2,2,2,25,25,25,25,25,25,25,25,25,25,2,25,25,2,25,2],
-            [2,25,25,25,25,25,25,25,25,25,25,25,25,25,2,25,12,2,25,2],
-            [2,25,25,25,25,25,25,25,25,25,25,25,25,25,2,2,2,2,25,2],
+            [2,2,2,25,25,25,25,25,25,25,25,25,25,25,25,25,25,2,2,2],
+            [2,2,2,25,25,25,25,25,25,25,25,25,25,25,25,25,25,2,2,2],
+            [2,25,25,25,25,25,25,25,25,25,25,25,25,25,25,12,25,2,2,2],
+            [2,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,25,2],
             [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,25,2],
             [2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,25,2],
             [2,3,3,15,3,3,3,3,3,3,3,3,3,3,3,3,3,3,25,2],
@@ -291,7 +291,7 @@ const MAPS = {
         portals: [
             { x: 16, y: 1, targetMap: 'field', targetX: 16, targetY: 17 },
             { x: 5, y: 4, targetMap: 'town2', targetX: 5, targetY: 9 },
-            { x: 16, y: 12, targetMap: 'dungeon2', targetX: 6, targetY: 2 },
+            { x: 15, y: 12, targetMap: 'dungeon2', targetX: 6, targetY: 2 },
             { x: 3, y: 16, targetMap: 'dungeon3', targetX: 7, targetY: 12, reqFlag: 'boss2_cleared' }
         ],
         encounters: [
@@ -365,7 +365,7 @@ const MAPS = {
             { id: 'd2_chest2', x: 11, y: 4, gold: 300, msg: 'たからばこを あけた！ 300ゴールドを てにいれた！' }
         ],
         portals: [
-            { x: 6, y: 2, targetMap: 'field2', targetX: 16, targetY: 13 }
+            { x: 6, y: 2, targetMap: 'field2', targetX: 15, targetY: 13 }
         ],
         encounters: [
             { enemyId: 'skeleton_knight', rate: 35 },
@@ -420,7 +420,7 @@ const MAPS = {
 
 // モンスター定義 (全14体)
 const ENEMIES = {
-    // --- 第1章 モンスター ---
+    // --- 第1章 モンスター (目標 LV1〜4) ---
     slime: {
         id: 'slime',
         name: 'スライム',
@@ -428,8 +428,8 @@ const ENEMIES = {
         attack: 7,
         defense: 3,
         agility: 4,
-        exp: 3,
-        gold: 4,
+        exp: 2,
+        gold: 3,
         sprite: 'slime',
         color: '#2277ff'
     },
@@ -440,8 +440,8 @@ const ENEMIES = {
         attack: 11,
         defense: 5,
         agility: 9,
-        exp: 6,
-        gold: 8,
+        exp: 4,
+        gold: 6,
         sprite: 'dracky',
         color: '#443377'
     },
@@ -452,8 +452,8 @@ const ENEMIES = {
         attack: 14,
         defense: 8,
         agility: 8,
-        exp: 11,
-        gold: 15,
+        exp: 7,
+        gold: 10,
         sprite: 'slime',
         tint: 'red',
         color: '#ff5522'
@@ -465,8 +465,8 @@ const ENEMIES = {
         attack: 18,
         defense: 12,
         agility: 10,
-        exp: 18,
-        gold: 22,
+        exp: 12,
+        gold: 16,
         sprite: 'skeleton',
         color: '#dddddd'
     },
@@ -477,15 +477,16 @@ const ENEMIES = {
         attack: 26,
         defense: 18,
         agility: 14,
-        exp: 120,
-        gold: 200,
+        exp: 60,
+        gold: 120,
         sprite: 'dragon',
         isBoss: true,
+        bossId: 'boss1',
         specialAttack: { name: '火の息', power: 18, msg: 'ドラゴンは 激しい炎を吐き出した！' },
         color: '#22bb44'
     },
 
-    // --- 第2章 モンスター ---
+    // --- 第2章 モンスター (目標 LV4〜7) ---
     wizard: {
         id: 'wizard',
         name: 'まほうつかい',
@@ -493,8 +494,8 @@ const ENEMIES = {
         attack: 16,
         defense: 12,
         agility: 12,
-        exp: 24,
-        gold: 28,
+        exp: 15,
+        gold: 18,
         sprite: 'wizard',
         spells: [{ name: 'ギラ', cost: 2, power: 14 }],
         color: '#bb2222'
@@ -506,8 +507,8 @@ const ENEMIES = {
         attack: 22,
         defense: 16,
         agility: 18,
-        exp: 36,
-        gold: 40,
+        exp: 20,
+        gold: 24,
         sprite: 'dracky',
         tint: 'gold',
         spells: [{ name: 'ギラ', cost: 2, power: 14 }],
@@ -520,8 +521,8 @@ const ENEMIES = {
         attack: 32,
         defense: 22,
         agility: 15,
-        exp: 55,
-        gold: 52,
+        exp: 28,
+        gold: 32,
         sprite: 'skeleton',
         tint: 'purple',
         specialAttack: { name: '痛恨の一撃', power: 30, msg: 'しりょうのきしの 痛恨の一撃！' },
@@ -534,8 +535,8 @@ const ENEMIES = {
         attack: 28,
         defense: 20,
         agility: 17,
-        exp: 75,
-        gold: 68,
+        exp: 38,
+        gold: 45,
         sprite: 'wizard',
         tint: 'dark',
         spells: [{ name: 'ベギラマ', cost: 4, power: 28 }],
@@ -548,15 +549,16 @@ const ENEMIES = {
         attack: 42,
         defense: 30,
         agility: 12,
-        exp: 280,
-        gold: 400,
+        exp: 150,
+        gold: 250,
         sprite: 'golem',
         isBoss: true,
+        bossId: 'boss2',
         specialAttack: { name: 'メガトンパンチ', power: 36, msg: 'ゴーレムの 豪快なメガトンパンチが炸裂！' },
         color: '#ab6b35'
     },
 
-    // --- 第3章 モンスター ---
+    // --- 第3章 モンスター (目標 LV7〜10) ---
     goldman: {
         id: 'goldman',
         name: 'ゴールドマン',
@@ -564,8 +566,8 @@ const ENEMIES = {
         attack: 38,
         defense: 26,
         agility: 14,
-        exp: 110,
-        gold: 250,
+        exp: 50,
+        gold: 150,
         sprite: 'golem',
         tint: 'gold',
         color: '#ffcc00'
@@ -577,8 +579,8 @@ const ENEMIES = {
         attack: 48,
         defense: 34,
         agility: 22,
-        exp: 160,
-        gold: 120,
+        exp: 70,
+        gold: 60,
         sprite: 'skeleton',
         tint: 'black',
         spells: [{ name: 'ホイミ', cost: 3, power: 30, isHeal: true }],
@@ -591,8 +593,8 @@ const ENEMIES = {
         attack: 56,
         defense: 38,
         agility: 24,
-        exp: 220,
-        gold: 150,
+        exp: 95,
+        gold: 80,
         sprite: 'dragon',
         tint: 'red',
         specialAttack: { name: '激しい炎', power: 34, msg: 'レッドドラゴンは 猛烈な火炎を放った！' },
@@ -610,7 +612,8 @@ const ENEMIES = {
         sprite: 'dragon',
         tint: 'boss',
         isBoss: true,
-        twoActions: true, // 2回行動
+        bossId: 'boss3',
+        twoActions: true,
         specialAttack: { name: '灼熱の火炎', power: 42, msg: '竜王の口から 灼熱の地獄の火炎が吹き荒れる！' },
         spells: [{ name: 'ベギラマ', cost: 4, power: 32 }],
         color: '#4a154b'
@@ -622,13 +625,13 @@ const LEVEL_TABLE = [
     { level: 1,  exp: 0,    maxHp: 20,  maxMp: 0,   attack: 8,  defense: 4,  agility: 5,  spells: [] },
     { level: 2,  exp: 10,   maxHp: 28,  maxMp: 8,   attack: 12, defense: 7,  agility: 8,  spells: ['ホイミ'] },
     { level: 3,  exp: 30,   maxHp: 38,  maxMp: 16,  attack: 16, defense: 11, agility: 12, spells: ['ホイミ', 'ギラ'] },
-    { level: 4,  exp: 70,   maxHp: 50,  maxMp: 24,  attack: 22, defense: 16, agility: 16, spells: ['ホイミ', 'ギラ'] },
-    { level: 5,  exp: 140,  maxHp: 68,  maxMp: 35,  attack: 28, defense: 22, agility: 20, spells: ['ホイミ', 'ギラ', 'ベホイミ'] },
-    { level: 6,  exp: 250,  maxHp: 90,  maxMp: 48,  attack: 36, defense: 28, agility: 24, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ'] },
-    { level: 7,  exp: 420,  maxHp: 115, maxMp: 62,  attack: 45, defense: 35, agility: 28, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ'] },
-    { level: 8,  exp: 650,  maxHp: 145, maxMp: 78,  attack: 55, defense: 42, agility: 32, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ', 'ベホマ'] },
-    { level: 9,  exp: 980,  maxHp: 180, maxMp: 95,  attack: 66, defense: 50, agility: 36, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ', 'ベホマ', 'ギガデイン'] },
-    { level: 10, exp: 1400, maxHp: 220, maxMp: 115, attack: 78, defense: 60, agility: 40, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ', 'ベホマ', 'ギガデイン'] }
+    { level: 4,  exp: 75,   maxHp: 50,  maxMp: 24,  attack: 22, defense: 16, agility: 16, spells: ['ホイミ', 'ギラ'] },
+    { level: 5,  exp: 160,  maxHp: 68,  maxMp: 35,  attack: 28, defense: 22, agility: 20, spells: ['ホイミ', 'ギラ', 'ベホイミ'] },
+    { level: 6,  exp: 290,  maxHp: 90,  maxMp: 48,  attack: 36, defense: 28, agility: 24, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ'] },
+    { level: 7,  exp: 480,  maxHp: 115, maxMp: 62,  attack: 45, defense: 35, agility: 28, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ'] },
+    { level: 8,  exp: 750,  maxHp: 145, maxMp: 78,  attack: 55, defense: 42, agility: 32, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ', 'ベホマ'] },
+    { level: 9,  exp: 1150, maxHp: 180, maxMp: 95,  attack: 66, defense: 50, agility: 36, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ', 'ベホマ', 'ギガデイン'] },
+    { level: 10, exp: 1700, maxHp: 220, maxMp: 115, attack: 78, defense: 60, agility: 40, spells: ['ホイミ', 'ギラ', 'ベホイミ', 'ベギラマ', 'ベホマ', 'ギガデイン'] }
 ];
 
 // 呪文定義
