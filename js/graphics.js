@@ -995,6 +995,49 @@ class GraphicsEngine {
             };
         }
 
+        // マップ上のボスゴーレム (16x16 スプライト)
+        if (type === 'golem') {
+            const f = walkFrame || 0;
+            return {
+                pal: ['#000000', '#482018', '#683020', '#a85838', '#c09058', '#f82020', '#d8a870', '#181008'],
+                data: f === 0 ? [
+                    "....00333300....",
+                    "...0344444430...",
+                    "..034466664430..",
+                    "..034504405430..",
+                    "..013444444310..",
+                    ".00123333332100.",
+                    ".01234444443210.",
+                    ".01244444444210.",
+                    "0122441111442210",
+                    "0123441221443210",
+                    ".01234444443210.",
+                    "..001233332100..",
+                    "...0123333210...",
+                    "...0122442210...",
+                    "...0110..0110...",
+                    "...0000..0000..."
+                ] : [
+                    "....00333300....",
+                    "...0344444430...",
+                    "..034466664430..",
+                    "..034504405430..",
+                    "..013444444310..",
+                    ".00123333332100.",
+                    ".01234444443210.",
+                    ".01244444444210.",
+                    "0122441111442210",
+                    "0123441221443210",
+                    ".01234444443210.",
+                    "..001233332100..",
+                    "...0123333210...",
+                    "..012244442210..",
+                    "..0110....0110..",
+                    "..0000....0000.."
+                ]
+            };
+        }
+
         return null;
     }
 
@@ -1379,31 +1422,45 @@ class GraphicsEngine {
         const baseSprite = enemyData.sprite || enemyId;
         const img = this.monsterImages[baseSprite] || this.monsterImages[enemyId];
         
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+
+        // 色違い・ボスのフィルタ演出
+        if (enemyData.tint === 'red') {
+            ctx.filter = 'hue-rotate(140deg) saturate(2.2)'; // 赤系 (スライムベス、レッドドラゴン)
+        } else if (enemyData.tint === 'gold') {
+            ctx.filter = 'hue-rotate(60deg) saturate(2.5) brightness(1.2)'; // 金系 (メイジドラキー、ゴールドマン)
+        } else if (enemyData.tint === 'purple') {
+            ctx.filter = 'hue-rotate(260deg) saturate(1.8)'; // 紫系 (しりょうのきし)
+        } else if (enemyData.tint === 'dark') {
+            ctx.filter = 'hue-rotate(290deg) brightness(0.8) contrast(1.4)'; // 闇系 (だいまどう)
+        } else if (enemyData.tint === 'black') {
+            ctx.filter = 'grayscale(100%) brightness(0.6) contrast(1.6)'; // 漆黒系 (あくまのきし)
+        } else if (enemyData.tint === 'boss') {
+            ctx.filter = 'hue-rotate(230deg) saturate(2) contrast(1.5) drop-shadow(0 0 12px #ff0055)'; // 大ボス真・竜王 (禍々しい暗黒オーラ)
+        }
+
         if (img && img.complete && img.naturalWidth > 0) {
-            ctx.save();
-            ctx.imageSmoothingEnabled = false; // シャープなピクセル感を維持
-
-            // 色違い・ボスのフィルタ演出
-            if (enemyData.tint === 'red') {
-                ctx.filter = 'hue-rotate(140deg) saturate(2.2)'; // 赤系 (スライムベス、レッドドラゴン)
-            } else if (enemyData.tint === 'gold') {
-                ctx.filter = 'hue-rotate(60deg) saturate(2.5) brightness(1.2)'; // 金系 (メイジドラキー、ゴールドマン)
-            } else if (enemyData.tint === 'purple') {
-                ctx.filter = 'hue-rotate(260deg) saturate(1.8)'; // 紫系 (しりょうのきし)
-            } else if (enemyData.tint === 'dark') {
-                ctx.filter = 'hue-rotate(290deg) brightness(0.8) contrast(1.4)'; // 闇系 (だいまどう)
-            } else if (enemyData.tint === 'black') {
-                ctx.filter = 'grayscale(100%) brightness(0.6) contrast(1.6)'; // 漆黒系 (あくまのきし)
-            } else if (enemyData.tint === 'boss') {
-                ctx.filter = 'hue-rotate(230deg) saturate(2) contrast(1.5) drop-shadow(0 0 12px #ff0055)'; // 大ボス真・竜王 (禍々しい暗黒オーラ)
-            }
-
             const aspect = img.naturalHeight / img.naturalWidth;
             const drawW = size;
             const drawH = size * aspect;
             ctx.drawImage(img, x, y, drawW, drawH);
-            ctx.restore();
+        } else {
+            // パターンからのフォールバック描画
+            const patKey = `mon_pat_${baseSprite}`;
+            if (!this.cache[patKey]) {
+                const pat = this.getMonsterPattern(baseSprite) || this.getMonsterPattern(enemyId);
+                if (pat) {
+                    this.cache[patKey] = this.buildPattern(pat.pal, pat.data, 1);
+                }
+            }
+            if (this.cache[patKey]) {
+                const patCanvas = this.cache[patKey];
+                const aspect = patCanvas.height / patCanvas.width;
+                ctx.drawImage(patCanvas, x, y, size, size * aspect);
+            }
         }
+        ctx.restore();
     }
 
     drawWindow(ctx, x, y, width, height) {

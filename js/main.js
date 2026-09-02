@@ -6,7 +6,8 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.2';
+        this.version = 'Ver 2.0.3';
+        this.noEncounter = false;
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス
@@ -572,6 +573,7 @@ class Game {
     }
 
     checkRandomEncounter() {
+        if (this.noEncounter) return;
         if (this.safeSteps > 0) {
             this.safeSteps--;
             return;
@@ -976,3 +978,104 @@ class Game {
 window.addEventListener('DOMContentLoaded', () => {
     window.game = new Game();
 });
+
+// --- 🧪 デバッグ・テスト用グローバル関数 ---
+function toggleDebugModal() {
+    const modal = document.getElementById('debugModal');
+    if (modal) {
+        modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+    }
+}
+
+function debugSetChapter(chapter) {
+    if (!window.game) return;
+    const g = window.game;
+    
+    if (chapter === 1) {
+        g.player.level = 1;
+        g.player.exp = 0;
+        g.player.hp = 20; g.player.maxHp = 20;
+        g.player.mp = 0; g.player.maxMp = 0;
+        g.player.attack = 8; g.player.defense = 4; g.player.agility = 5;
+        g.player.gold = 60;
+        g.player.equipment = { weapon: 'ひのきのぼう', shield: null };
+        g.player.items = { 'やくそう': 2, 'まほうのせいすい': 0, 'せかいじゅのは': 0 };
+        g.player.spells = [];
+        g.flags = { boss1_cleared: false, boss2_cleared: false, ending_reached: false, silver_key: false, rainbow_drop: false };
+        g.currentMap = MAPS.castle;
+        g.player.x = 6; g.player.y = 2; g.player.dir = 'up';
+    } else if (chapter === 2) {
+        // 第2章：砂漠（LV5、銅の剣、皮の盾、銀の鍵所持）
+        g.player.level = 5;
+        g.player.exp = LEVEL_TABLE[5].exp;
+        g.player.hp = LEVEL_TABLE[5].hp; g.player.maxHp = LEVEL_TABLE[5].hp;
+        g.player.mp = LEVEL_TABLE[5].mp; g.player.maxMp = LEVEL_TABLE[5].mp;
+        g.player.attack = LEVEL_TABLE[5].attack;
+        g.player.defense = LEVEL_TABLE[5].defense;
+        g.player.agility = LEVEL_TABLE[5].agility;
+        g.player.gold = 500;
+        g.player.equipment = { weapon: 'どうのつるぎ', shield: 'かわのたて' };
+        g.player.items = { 'やくそう': 5, 'まほうのせいすい': 2, 'せかいじゅのは': 0 };
+        g.player.spells = ['ホイミ', 'ギラ', 'ラリホー', 'ベホイミ'];
+        g.flags = { boss1_cleared: true, boss2_cleared: false, ending_reached: false, silver_key: true, rainbow_drop: false };
+        g.currentMap = MAPS.field2;
+        g.player.x = 8; g.player.y = 10; g.player.dir = 'down';
+    } else if (chapter === 3) {
+        // 第3章：竜王城（LV8、鋼の剣、鉄の盾、虹の雫所持）
+        g.player.level = 8;
+        g.player.exp = LEVEL_TABLE[8].exp;
+        g.player.hp = LEVEL_TABLE[8].hp; g.player.maxHp = LEVEL_TABLE[8].hp;
+        g.player.mp = LEVEL_TABLE[8].mp; g.player.maxMp = LEVEL_TABLE[8].mp;
+        g.player.attack = LEVEL_TABLE[8].attack;
+        g.player.defense = LEVEL_TABLE[8].defense;
+        g.player.agility = LEVEL_TABLE[8].agility;
+        g.player.gold = 1500;
+        g.player.equipment = { weapon: 'はがねのつるぎ', shield: 'てつのたて' };
+        g.player.items = { 'やくそう': 9, 'まほうのせいすい': 5, 'せかいじゅのは': 1 };
+        g.player.spells = ['ホイミ', 'ギラ', 'ラリホー', 'ベホイミ', 'ベギラマ', 'ベホマ'];
+        g.flags = { boss1_cleared: true, boss2_cleared: true, ending_reached: false, silver_key: true, rainbow_drop: true };
+        g.currentMap = MAPS.dungeon3;
+        g.player.x = 7; g.player.y = 12; g.player.dir = 'up';
+    }
+    
+    g.state = 'EXPLORE';
+    audio.playBGM(g.currentMap.bgm);
+    toggleDebugModal();
+}
+
+function debugAddGold(amount) {
+    if (window.game) {
+        window.game.player.gold += amount;
+        audio.playLevelUp();
+    }
+}
+
+function debugFullHeal() {
+    if (window.game) {
+        const p = window.game.player;
+        p.hp = p.maxHp;
+        p.mp = p.maxMp;
+        audio.playInn();
+    }
+}
+
+function debugAddItems() {
+    if (window.game) {
+        const p = window.game.player;
+        p.items['やくそう'] = 9;
+        p.items['まほうのせいすい'] = 9;
+        p.items['せかいじゅのは'] = 1;
+        audio.playLevelUp();
+    }
+}
+
+function debugToggleEncounter() {
+    if (window.game) {
+        window.game.noEncounter = !window.game.noEncounter;
+        const btn = document.getElementById('btnEncounterToggle');
+        if (btn) {
+            btn.textContent = window.game.noEncounter ? '🚫 敵: OFF' : '🚫 敵: ON';
+            btn.style.color = window.game.noEncounter ? '#ff4444' : '#ffffff';
+        }
+    }
+}
