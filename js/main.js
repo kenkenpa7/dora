@@ -1,4 +1,4 @@
-// メインゲームコントローラー & ループ (v2.0.0 完全版)
+// メインゲームコントローラー & ループ (v2.0.1 完全版)
 
 class Game {
     constructor() {
@@ -6,10 +6,10 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.0';
-        this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
+        this.version = 'Ver 2.0.1';
+        this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         
-        // プレイヤー初期ステータス (王様の前に上向きで直立)
+        // プレイヤー初期ステータス
         this.player = {
             name: 'ゆうしゃ',
             x: 6,
@@ -50,13 +50,17 @@ class Game {
         this.currentMap = MAPS.castle;
         this.battle = new BattleSystem(this);
 
-        // 会話ステート
+        // 会話・ショップステート
         this.dialogQueue = [];
         this.currentDialog = '';
         this.fullDialog = '';
         this.dialogTypingTimer = null;
         this.talkingNpc = null;
         this.innFade = 0;
+
+        this.shopNpc = null;
+        this.shopItems = [];
+        this.shopIndex = 0;
 
         // キー入力状態
         this.keys = {};
@@ -71,6 +75,15 @@ class Game {
         requestAnimationFrame(this.gameLoop);
     }
 
+    // ボスが撃破済みかどうか判定
+    isNpcActive(npc) {
+        if (!npc) return false;
+        if (npc.bossId === 'boss1' && this.flags.boss1_cleared) return false;
+        if (npc.bossId === 'boss2' && this.flags.boss2_cleared) return false;
+        if (npc.bossId === 'boss3' && this.flags.boss3_cleared) return false;
+        return true;
+    }
+
     // 入力イベント設定
     initInput() {
         window.addEventListener('keydown', (e) => {
@@ -82,7 +95,6 @@ class Game {
             this.keys[e.key] = false;
         });
 
-        // バーチャルパッド操作 (スマホ・タッチ・マウス両対応のpointerイベント)
         const bindBtn = (id, keyName) => {
             const btn = document.getElementById(id);
             if (!btn) return;
@@ -112,7 +124,6 @@ class Game {
         bindBtn('btnA', 'Enter');
         bindBtn('btnB', 'Escape');
 
-        // キャンバスクリックで進行/メッセージ送り/音声初期化
         this.canvas.addEventListener('click', () => {
             audio.init();
             if (this.state === 'TITLE') {
@@ -120,6 +131,8 @@ class Game {
             } else if (this.state === 'TALK') {
                 audio.playCursor();
                 this.advanceDialog();
+            } else if (this.state === 'SHOP') {
+                this.selectShopItem();
             } else if (this.state === 'BATTLE') {
                 this.handleActionInput('Enter');
             } else if (this.state === 'ENDING') {
@@ -127,7 +140,6 @@ class Game {
             }
         });
 
-        // スマホ画面全体タップ/タッチでのエンディングリスタート保証
         window.addEventListener('pointerdown', () => {
             if (this.state === 'ENDING') {
                 location.reload();
@@ -144,7 +156,6 @@ class Game {
         this.player.y = 2;
         this.player.dir = 'up';
 
-        // 王様のオープニング会話を自動開始
         this.state = 'TALK';
         const kingNpc = this.currentMap.npcs.find(n => n.id === 'king') || { name: '王様' };
         this.talkingNpc = kingNpc;
@@ -174,9 +185,26 @@ class Game {
             return;
         }
 
-        // バトル時の入力 (縦一列コマンド)
+        // ショップメニュー操作
+        if (this.state === 'SHOP') {
+            if (['ArrowUp', 'w', 'W', 'ArrowLeft', 'a', 'A'].includes(key)) {
+                audio.playCursor();
+                this.shopIndex = (this.shopIndex - 1 + this.shopItems.length) % this.shopItems.length;
+            } else if (['ArrowDown', 's', 'S', 'ArrowRight', 'd', 'D'].includes(key)) {
+                audio.playCursor();
+                this.shopIndex = (this.shopIndex + 1) % this.shopItems.length;
+            } else if (['Enter', ' ', 'z', 'Z'].includes(key)) {
+                this.selectShopItem();
+            } else if (['Escape', 'x', 'X'].includes(key)) {
+                audio.playCancel();
+                this.closeShop();
+            }
+            return;
+        }
+
+        // バトル時の入力
         if (this.state === 'BATTLE') {
-            if (['ArrowUp', 'w', 'W'].includes(key)) {
+            if (['ArrowUp', 'w', 'W', 'ArrowLeft', 'a', 'A'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
                     this.battle.menuIndex = (this.battle.menuIndex - 1 + 4) % 4;
                     audio.playCursor();
@@ -184,22 +212,12 @@ class Game {
                     this.battle.spellIndex = Math.max(0, this.battle.spellIndex - 1);
                     audio.playCursor();
                 }
-            } else if (['ArrowDown', 's', 'S'].includes(key)) {
+            } else if (['ArrowDown', 's', 'S', 'ArrowRight', 'd', 'D'].includes(key)) {
                 if (this.battle.phase === 'COMMAND') {
                     this.battle.menuIndex = (this.battle.menuIndex + 1) % 4;
                     audio.playCursor();
                 } else if (this.battle.phase === 'SPELL_SELECT') {
                     this.battle.spellIndex = Math.min(this.player.spells.length - 1, this.battle.spellIndex + 1);
-                    audio.playCursor();
-                }
-            } else if (['ArrowLeft', 'a', 'A'].includes(key)) {
-                if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex - 1 + 4) % 4;
-                    audio.playCursor();
-                }
-            } else if (['ArrowRight', 'd', 'D'].includes(key)) {
-                if (this.battle.phase === 'COMMAND') {
-                    this.battle.menuIndex = (this.battle.menuIndex + 1) % 4;
                     audio.playCursor();
                 }
             } else if (['Enter', ' ', 'z', 'Z'].includes(key)) {
@@ -247,8 +265,8 @@ class Game {
         if (this.player.dir === 'left') targetX--;
         if (this.player.dir === 'right') targetX++;
 
-        // NPCチェック
-        const npc = this.currentMap.npcs.find(n => n.x === targetX && n.y === targetY);
+        // NPCチェック (撃破済みボスは除外)
+        const npc = this.currentMap.npcs.find(n => n.x === targetX && n.y === targetY && this.isNpcActive(n));
         if (npc) {
             audio.playSelect();
             if (npc.isBoss) {
@@ -257,11 +275,16 @@ class Game {
                 return;
             }
 
+            if (npc.isShop) {
+                // ショップメニューを開く
+                this.openShop(npc);
+                return;
+            }
+
             this.state = 'TALK';
             this.talkingNpc = npc;
 
             if (npc.isInn) {
-                // 宿屋フロー
                 this.dialogQueue = [
                     { text: '旅の宿屋へようこそ！ ひと晩 泊まっていきなされ。' },
                     { 
@@ -282,11 +305,7 @@ class Game {
                     },
                     { text: 'おはようございます！ HPと MPが ぜんかいふく した！ またどうぞ！' }
                 ];
-            } else if (npc.isShop) {
-                // ショップ売買フロー
-                this.handleShopInteraction(npc);
             } else if (npc.reqFlag) {
-                // フラグ連動会話 (関所の兵士など)
                 if (this.flags[npc.reqFlag]) {
                     this.dialogQueue = (npc.passDialog || npc.dialog).map(t => ({ text: t }));
                 } else {
@@ -300,7 +319,7 @@ class Game {
             return;
         }
 
-        // 宝箱チェック (正面 または 足元)
+        // 宝箱チェック
         const checkPosList = [
             { x: targetX, y: targetY },
             { x: this.player.x, y: this.player.y }
@@ -350,48 +369,79 @@ class Game {
         }
     }
 
-    // ショップ（武器・防具・道具）の購入処理
-    handleShopInteraction(npc) {
-        const items = npc.shopItems || [];
-        this.dialogQueue = [];
+    // ショップを開く
+    openShop(npc) {
+        this.state = 'SHOP';
+        this.shopNpc = npc;
+        this.shopItems = [...(npc.shopItems || []), 'やめる'];
+        this.shopIndex = 0;
+        audio.playSelect();
+    }
 
-        for (const itemName of items) {
-            // 武器チェック
-            if (WEAPONS[itemName]) {
-                const w = WEAPONS[itemName];
-                if (this.player.equipment.weapon === itemName) {
-                    this.dialogQueue.push({ text: `【${w.name}】は すでに装備していますぞ！` });
-                } else if (this.player.gold >= w.price) {
-                    this.player.gold -= w.price;
-                    this.player.equipment.weapon = itemName;
-                    this.dialogQueue.push({ text: `まいど！【${w.name}】(${w.price}G)を 買い、さっそく装備した！(攻撃力+${w.attack})` });
-                } else {
-                    this.dialogQueue.push({ text: `【${w.name}】は ${w.price}G ですぞ。ゴールドが たりないようです！` });
-                }
-            // 盾チェック
-            } else if (SHIELDS[itemName]) {
-                const s = SHIELDS[itemName];
-                if (this.player.equipment.shield === itemName) {
-                    this.dialogQueue.push({ text: `【${s.name}】は すでに装備していますぞ！` });
-                } else if (this.player.gold >= s.price) {
-                    this.player.gold -= s.price;
-                    this.player.equipment.shield = itemName;
-                    this.dialogQueue.push({ text: `まいど！【${s.name}】(${s.price}G)を 買い、さっそく装備した！(防御力+${s.defense})` });
-                } else {
-                    this.dialogQueue.push({ text: `【${s.name}】は ${s.price}G ですぞ。ゴールドが たりないようです！` });
-                }
-            // 消費アイテムチェック
-            } else if (ITEMS[itemName]) {
-                const it = ITEMS[itemName];
-                if (this.player.gold >= it.price) {
-                    this.player.gold -= it.price;
-                    this.player.items[itemName] = (this.player.items[itemName] || 0) + 1;
-                    this.dialogQueue.push({ text: `まいど！【${it.name}】(${it.price}G)を 1こ 手に入れた！ (所持: ${this.player.items[itemName]}こ)` });
-                } else {
-                    this.dialogQueue.push({ text: `【${it.name}】は ${it.price}G です。ゴールドが たりません！` });
-                }
+    // ショップで商品を選択
+    selectShopItem() {
+        const selected = this.shopItems[this.shopIndex];
+        if (selected === 'やめる' || !selected) {
+            this.closeShop();
+            return;
+        }
+
+        // 武器購入
+        if (WEAPONS[selected]) {
+            const w = WEAPONS[selected];
+            if (this.player.equipment.weapon === selected) {
+                audio.playCancel();
+                this.showShopMessage(`【${w.name}】は すでに装備しています！`);
+            } else if (this.player.gold >= w.price) {
+                audio.playLevelUp();
+                this.player.gold -= w.price;
+                this.player.equipment.weapon = selected;
+                this.showShopMessage(`【${w.name}】(${w.price}G)を 買い、さっそく装備した！(攻撃力+${w.attack})`);
+            } else {
+                audio.playCancel();
+                this.showShopMessage(`【${w.name}】は ${w.price}G です。ゴールドが足りません！`);
+            }
+        // 盾購入
+        } else if (SHIELDS[selected]) {
+            const s = SHIELDS[selected];
+            if (this.player.equipment.shield === selected) {
+                audio.playCancel();
+                this.showShopMessage(`【${s.name}】は すでに装備しています！`);
+            } else if (this.player.gold >= s.price) {
+                audio.playLevelUp();
+                this.player.gold -= s.price;
+                this.player.equipment.shield = selected;
+                this.showShopMessage(`【${s.name}】(${s.price}G)を 買い、さっそく装備した！(防御力+${s.defense})`);
+            } else {
+                audio.playCancel();
+                this.showShopMessage(`【${s.name}】は ${s.price}G です。ゴールドが足りません！`);
+            }
+        // 消費アイテム購入
+        } else if (ITEMS[selected]) {
+            const it = ITEMS[selected];
+            if (this.player.gold >= it.price) {
+                audio.playLevelUp();
+                this.player.gold -= it.price;
+                this.player.items[selected] = (this.player.items[selected] || 0) + 1;
+                this.showShopMessage(`【${it.name}】(${it.price}G)を 買った！ (所持: ${this.player.items[selected]}こ)`);
+            } else {
+                audio.playCancel();
+                this.showShopMessage(`【${it.name}】は ${it.price}G です。ゴールドが足りません！`);
             }
         }
+    }
+
+    showShopMessage(msg) {
+        this.state = 'TALK';
+        this.talkingNpc = this.shopNpc;
+        this.dialogQueue = [{ text: msg }];
+        this.advanceDialog();
+    }
+
+    closeShop() {
+        this.state = 'EXPLORE';
+        this.shopNpc = null;
+        this.shopItems = [];
     }
 
     advanceDialog() {
@@ -499,8 +549,8 @@ class Game {
         const tileType = this.currentMap.data[y][x];
         if (!PASSABLE[tileType]) return false;
 
-        // NPCがいるマスは通行不可
-        if (this.currentMap.npcs.some(n => n.x === x && n.y === y)) return false;
+        // アクティブなNPCがいるマスは通行不可
+        if (this.currentMap.npcs.some(n => n.x === x && n.y === y && this.isNpcActive(n))) return false;
 
         return true;
     }
@@ -508,9 +558,8 @@ class Game {
     checkPortals() {
         const portal = this.currentMap.portals.find(p => p.x === this.player.x && p.y === this.player.y);
         if (portal) {
-            // 条件フラグチェック (関所・虹の橋など)
             if (portal.reqFlag && !this.flags[portal.reqFlag]) {
-                return; // 通行不可
+                return;
             }
 
             audio.playStairs();
@@ -589,6 +638,10 @@ class Game {
 
         if (this.state === 'TALK') {
             this.renderDialogWindow();
+        }
+
+        if (this.state === 'SHOP') {
+            this.renderShopWindow();
         }
 
         if (this.innFade > 0) {
@@ -675,9 +728,10 @@ class Game {
             }
         }
 
-        // NPC描画
+        // NPC描画 (撃破済みボスは非表示)
         const npcFrame = Math.floor(Date.now() / 450) % 2;
         for (const npc of this.currentMap.npcs) {
+            if (!this.isNpcActive(npc)) continue;
             const screenX = offsetX + npc.x * tw;
             const screenY = offsetY + npc.y * tw;
             if (screenX >= -tw && screenX <= this.canvas.width && screenY >= -tw && screenY <= this.canvas.height) {
@@ -689,23 +743,69 @@ class Game {
         gfx.drawCharacter(this.ctx, 'hero', this.player.dir, this.player.walkFrame, centerX, centerY);
     }
 
+    // ステータス画面 (攻撃力・防御力の合計値と補正値を明示)
     renderStatusWindow() {
-        const w = 150;
-        const h = 135;
+        const w = 155;
+        const h = 145;
         gfx.drawWindow(this.ctx, 10, 10, w, h);
 
-        const weaponName = this.player.equipment?.weapon || 'なし';
-        const shieldName = this.player.equipment?.shield || 'なし';
+        const wAtk = (typeof WEAPONS !== 'undefined' && WEAPONS[this.player.equipment?.weapon]) ? WEAPONS[this.player.equipment.weapon].attack : 0;
+        const totalAtk = this.player.attack + wAtk;
+        const sDef = (typeof SHIELDS !== 'undefined' && SHIELDS[this.player.equipment?.shield]) ? SHIELDS[this.player.equipment.shield].defense : 0;
+        const totalDef = this.player.defense + sDef;
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 13px monospace';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(`LV : ${this.player.level}`, 20, 30);
+        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 20, 50);
+        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 20, 70);
+        this.ctx.fillText(`攻 : ${totalAtk} (${this.player.attack}+${wAtk})`, 20, 90);
+        this.ctx.fillText(`守 : ${totalDef} (${this.player.defense}+${sDef})`, 20, 110);
+        this.ctx.fillText(`G  : ${this.player.gold} G`, 20, 130);
+    }
+
+    // ショップ購入ウィンドウ
+    renderShopWindow() {
+        const w = this.canvas.width - 24;
+        const h = 190;
+        const x = 12;
+        const y = this.canvas.height - h - 14;
+        gfx.drawWindow(this.ctx, x, y, w, h);
+
+        this.ctx.fillStyle = '#ffcc00';
+        this.ctx.font = 'bold 15px monospace';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(`【${this.shopNpc?.name || '商人'}】(所持金: ${this.player.gold}G)`, x + 16, y + 26);
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 14px monospace';
-        this.ctx.textAlign = 'left';
-        this.ctx.fillText(`LV : ${this.player.level}`, 22, 32);
-        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 22, 52);
-        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 22, 72);
-        this.ctx.fillText(`G  : ${this.player.gold} G`, 22, 92);
-        this.ctx.fillText(`武 : ${weaponName.slice(0, 5)}`, 22, 112);
-        this.ctx.fillText(`盾 : ${shieldName.slice(0, 5)}`, 22, 132);
+
+        this.shopItems.forEach((itemName, idx) => {
+            let label = itemName;
+            if (WEAPONS[itemName]) {
+                const w = WEAPONS[itemName];
+                const equipped = this.player.equipment.weapon === itemName ? ' (装備中)' : '';
+                label = `${w.name} (${w.price}G 攻+${w.attack})${equipped}`;
+            } else if (SHIELDS[itemName]) {
+                const s = SHIELDS[itemName];
+                const equipped = this.player.equipment.shield === itemName ? ' (装備中)' : '';
+                label = `${s.name} (${s.price}G 守+${s.defense})${equipped}`;
+            } else if (ITEMS[itemName]) {
+                const it = ITEMS[itemName];
+                const count = this.player.items[itemName] || 0;
+                label = `${it.name} (${it.price}G) [所持:${count}]`;
+            }
+
+            const itemY = y + 56 + idx * 28;
+            this.ctx.fillText(label, x + 38, itemY);
+
+            if (idx === this.shopIndex) {
+                this.ctx.fillStyle = '#00ffcc';
+                this.ctx.fillText('▶', x + 18, itemY);
+                this.ctx.fillStyle = '#ffffff';
+            }
+        });
     }
 
     renderDialogWindow() {
@@ -768,7 +868,7 @@ class Game {
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
-        // 1. モンスター描画 (全14種サイズ定義)
+        // 1. モンスター描画
         if (b.enemy && b.enemyHp > 0) {
             const monsterSizes = {
                 slime:           { size: 90,  x: 245, y: 220 },
