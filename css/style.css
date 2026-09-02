@@ -121,8 +121,9 @@ body {
 
 .virtual-pad {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    gap: 40px; /* 十字キーとABボタンの間隔をボタン1個分（約40px）に設定 */
     padding: 6px 14px;
     background: #181822;
     border-radius: 12px;
@@ -240,6 +241,7 @@ body {
     }
     .virtual-pad {
         padding: 4px 10px;
+        gap: 24px;
     }
     .game-container {
         padding-bottom: max(50px, env(safe-area-inset-bottom, 0px) + 40px);
