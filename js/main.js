@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.3';
+        this.version = 'Ver 2.0.4';
         this.noEncounter = false;
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         

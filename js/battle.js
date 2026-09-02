@@ -299,15 +299,29 @@ class BattleSystem {
         }
     }
 
-    // どうぐ (やくそう / まほうのせいすい)
+    // どうぐ (せかいじゅのは / やくそう / まほうのせいすい)
     executeItem() {
         this.phase = 'PLAYER_ACT';
         const p = this.game.player;
         const herbs = p.items['やくそう'] || p.herbs || 0;
         const mpPotions = p.items['まほうのせいすい'] || 0;
+        const leaves = p.items['せかいじゅのは'] || 0;
 
-        // MPが減っていて聖水を持っている場合は聖水、そうでなければ薬草を優先使用
-        if (p.mp < p.maxMp && mpPotions > 0) {
+        // 瀕死時にせかいじゅのはを所持している場合は手動全回復可能
+        if (p.hp <= Math.floor(p.maxHp * 0.3) && leaves > 0) {
+            p.items['せかいじゅのは']--;
+            this.queueMessage(`せかいじゅのはを つかった！`, { duration: 700 });
+            this.queueMessage(`HPが ぜんかいふくした！`, {
+                onStart: () => {
+                    audio.playHeal();
+                    p.hp = p.maxHp;
+                },
+                onEnd: () => {
+                    this.startEnemyTurn();
+                },
+                duration: 900
+            });
+        } else if (p.mp < p.maxMp && mpPotions > 0) {
             p.items['まほうのせいすい']--;
             const mpAmount = 20;
             this.queueMessage(`まほうのせいすいを つかった！`, { duration: 700 });
@@ -330,6 +344,19 @@ class BattleSystem {
                 onStart: () => {
                     audio.playHeal();
                     p.hp = Math.min(p.maxHp, p.hp + healAmount);
+                },
+                onEnd: () => {
+                    this.startEnemyTurn();
+                },
+                duration: 900
+            });
+        } else if (leaves > 0) {
+            p.items['せかいじゅのは']--;
+            this.queueMessage(`せかいじゅのはを つかった！`, { duration: 700 });
+            this.queueMessage(`HPが ぜんかいふくした！`, {
+                onStart: () => {
+                    audio.playHeal();
+                    p.hp = p.maxHp;
                 },
                 onEnd: () => {
                     this.startEnemyTurn();
@@ -384,24 +411,15 @@ class BattleSystem {
         const shieldDef = (typeof SHIELDS !== 'undefined' && SHIELDS[p.equipment?.shield]) ? SHIELDS[p.equipment.shield].defense : 0;
         const totalDef = p.defense + shieldDef;
 
+        let attackMsg = '';
+        let damage = 0;
+
         // 特殊攻撃チェック (火の息、メガトンパンチ、激しい炎等)
         if (e.specialAttack && Math.random() < 0.45) {
-            this.queueMessage(e.specialAttack.msg, { duration: 800 });
-            const damage = Math.max(5, Math.floor(e.specialAttack.power - (shieldDef / 3) + (Math.random() * 6 - 3)));
-            this.queueMessage(`ゆうしゃは ${damage}の ダメージをうけた！`, {
-                onStart: () => {
-                    this.triggerPlayerDamage(damage);
-                },
-                onEnd: () => {
-                    onComplete();
-                },
-                duration: 900
-            });
-            return;
-        }
-
+            attackMsg = e.specialAttack.msg;
+            damage = Math.max(5, Math.floor(e.specialAttack.power - (shieldDef / 3) + (Math.random() * 6 - 3)));
         // 呪文チェック
-        if (e.spells && e.spells.length > 0 && Math.random() < 0.5) {
+        } else if (e.spells && e.spells.length > 0 && Math.random() < 0.5) {
             const spell = e.spells[0];
             if (spell.isHeal) {
                 this.queueMessage(`${e.name}は ${spell.name}を となえた！`, {
@@ -422,59 +440,53 @@ class BattleSystem {
                     onStart: () => { audio.playMagic(); },
                     duration: 800
                 });
-                const damage = Math.max(5, Math.floor(spell.power - (shieldDef / 3) + (Math.random() * 6 - 3)));
-                this.queueMessage(`ゆうしゃは ${damage}の ダメージをうけた！`, {
-                    onStart: () => {
-                        this.triggerPlayerDamage(damage);
-                    },
-                    onEnd: () => { onComplete(); },
-                    duration: 900
-                });
-                return;
+                damage = Math.max(5, Math.floor(spell.power - (shieldDef / 3) + (Math.random() * 6 - 3)));
             }
+        // 通常攻撃
+        } else {
+            attackMsg = `${e.name}の こうげき！`;
+            const base = (e.attack / 2) - (totalDef / 4);
+            const variance = Math.max(1, Math.floor(base * 0.25));
+            damage = Math.max(1, Math.floor(base + (Math.random() * variance * 2 - variance)));
         }
 
-        // 通常攻撃
-        const base = (e.attack / 2) - (totalDef / 4);
-        const variance = Math.max(1, Math.floor(base * 0.25));
-        const damage = Math.max(1, Math.floor(base + (Math.random() * variance * 2 - variance)));
+        if (attackMsg) {
+            this.queueMessage(attackMsg, { duration: 700 });
+        }
 
-        this.queueMessage(`${e.name}の こうげき！`, { duration: 700 });
         this.queueMessage(`ゆうしゃは ${damage}の ダメージをうけた！`, {
             onStart: () => {
-                this.triggerPlayerDamage(damage);
+                audio.playPlayerHit();
+                this.flashScreen = true;
+                this.flashColor = '#ff2222';
+                setTimeout(() => { this.flashScreen = false; }, 150);
+                p.hp = Math.max(0, p.hp - damage);
             },
             onEnd: () => {
-                onComplete();
+                if (p.hp <= 0) {
+                    // せかいじゅのは所持チェック (自動蘇生)
+                    if (p.items && p.items['せかいじゅのは'] > 0) {
+                        p.items['せかいじゅのは']--;
+                        p.hp = p.maxHp; // HP全快で復活
+                        this.queueMessage(`しかし ふところの【せかいじゅのは】が まばゆくかがやいた！`, { duration: 1200 });
+                        this.queueMessage(`ゆうしゃは いのちを とりもどした！`, {
+                            onStart: () => {
+                                audio.playHeal();
+                            },
+                            onEnd: () => {
+                                onComplete(); // 復活後に確実にターン移行
+                            },
+                            duration: 1000
+                        });
+                    } else {
+                        this.handleDefeat();
+                    }
+                } else {
+                    onComplete();
+                }
             },
             duration: 900
         });
-    }
-
-    // プレイヤー被ダメージ演出 (せかいじゅのは自動復活チェック)
-    triggerPlayerDamage(damage) {
-        audio.playPlayerHit();
-        this.flashScreen = true;
-        this.flashColor = '#ff2222';
-        setTimeout(() => { this.flashScreen = false; }, 150);
-
-        this.game.player.hp = Math.max(0, this.game.player.hp - damage);
-        if (this.game.player.hp <= 0) {
-            // せかいじゅのは所持チェック
-            if (this.game.player.items && this.game.player.items['せかいじゅのは'] > 0) {
-                this.game.player.items['せかいじゅのは']--;
-                this.queueMessage(`しかし ふところの【せかいじゅのは】が まばゆくかがやいた！`, { duration: 1200 });
-                this.queueMessage(`ゆうしゃは いのちを とりもどした！`, {
-                    onStart: () => {
-                        audio.playHeal();
-                        this.game.player.hp = this.game.player.maxHp;
-                    },
-                    duration: 1000
-                });
-            } else {
-                this.handleDefeat();
-            }
-        }
     }
 
     // 勝利処理 (ボスごとのストーリー進行フラグ)
