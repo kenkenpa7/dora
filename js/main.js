@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 1.1.3';
+        this.version = 'Ver 1.2.0';
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'BATTLE', 'ENDING'
         
         // プレイヤー初期ステータス (王様の前に上向きで直立)
@@ -543,44 +543,44 @@ class Game {
     }
 
     renderTitle() {
-        gfx.drawWindow(this.ctx, 40, 40, this.canvas.width - 80, this.canvas.height - 80);
+        gfx.drawWindow(this.ctx, 20, 30, this.canvas.width - 40, this.canvas.height - 60);
 
         this.ctx.fillStyle = '#ffcc00';
         this.ctx.font = 'bold 26px monospace';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('DRAGON QUEST I', this.canvas.width / 2, 110);
+        this.ctx.fillText('DRAGON QUEST I', this.canvas.width / 2, 130);
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '16px monospace';
-        this.ctx.fillText('〜 レトロRPG プロトタイプ 〜', this.canvas.width / 2, 145);
+        this.ctx.fillText('〜 レトロRPG プロトタイプ 〜', this.canvas.width / 2, 175);
 
         // スライムのぽよんぽよんバウンスアニメーション
         const time = Date.now() / 1000;
         const bounceCycle = (time * 3.8) % Math.PI; // リズミカルな跳ね周期
-        const jumpHeight = Math.sin(bounceCycle) * 20; // 20pxジャンプ
+        const jumpHeight = Math.sin(bounceCycle) * 24; // 24pxジャンプ
 
         // スカッシュ＆ストレッチ（着地で潰れ、頂点で伸びる）
         let scaleX = 1.0;
         let scaleY = 1.0;
-        if (jumpHeight < 2.5) {
+        if (jumpHeight < 3) {
             scaleX = 1.20; // 着地で横に「ぽよん」
             scaleY = 0.80;
-        } else if (jumpHeight > 14) {
+        } else if (jumpHeight > 16) {
             scaleX = 0.90; // 上昇中に縦に「きゅっ」
             scaleY = 1.10;
         }
 
         const slimeCenterX = this.canvas.width / 2;
-        const groundY = 248; // 着地ライン
-        const slimeSize = 80;
+        const groundY = 380; // 着地ライン
+        const slimeSize = 100;
 
         // 足元の影（ジャンプに合わせて伸縮）
         this.ctx.save();
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         this.ctx.beginPath();
-        const shadowW = 28 * (1 - jumpHeight / 40);
-        const shadowH = 7 * (1 - jumpHeight / 50);
-        this.ctx.ellipse(slimeCenterX, groundY + 2, Math.max(6, shadowW), Math.max(2, shadowH), 0, 0, Math.PI * 2);
+        const shadowW = 34 * (1 - jumpHeight / 48);
+        const shadowH = 9 * (1 - jumpHeight / 58);
+        this.ctx.ellipse(slimeCenterX, groundY + 2, Math.max(8, shadowW), Math.max(3, shadowH), 0, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.restore();
 
@@ -595,50 +595,45 @@ class Game {
         this.ctx.font = '16px monospace';
         const blink = Math.floor(Date.now() / 400) % 2 === 0;
         if (blink) {
-            this.ctx.fillText('▶ 画面をクリック または [Enter] でスタート', this.canvas.width / 2, 290);
+            this.ctx.fillText('▶ 画面をタップしてスタート', this.canvas.width / 2, 490);
         }
 
-        this.ctx.fillStyle = '#aaaaaa';
-        this.ctx.font = '12px monospace';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('操作: 矢印キー/WASD(移動)  Enter/Space/Z(決定・会話)', this.canvas.width / 2, 325);
-
-        // バージョン表示（ハッキリ見える明るい白色）
+        // バージョン表示（右上に配置）
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 12px monospace';
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(this.version, this.canvas.width - 55, 65);
+        this.ctx.fillText(this.version, this.canvas.width - 40, 55);
     }
 
     renderEnding() {
-        gfx.drawWindow(this.ctx, 30, 30, this.canvas.width - 60, this.canvas.height - 60);
+        gfx.drawWindow(this.ctx, 20, 40, this.canvas.width - 40, this.canvas.height - 80);
 
         this.ctx.fillStyle = '#ffdd44';
         this.ctx.font = 'bold 24px monospace';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME CLEAR !', this.canvas.width / 2, 85);
+        this.ctx.fillText('GAME CLEAR !', this.canvas.width / 2, 120);
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '14px monospace';
-        this.ctx.fillText('見事にドラゴンを討ち滅ぼし、', this.canvas.width / 2, 130);
-        this.ctx.fillText('アレフガルドに再び光が戻った！', this.canvas.width / 2, 160);
-        this.ctx.fillText('勇者の伝説は 永遠に語り継がれるだろう...', this.canvas.width / 2, 190);
+        this.ctx.fillText('見事にドラゴンを討ち滅ぼし、', this.canvas.width / 2, 190);
+        this.ctx.fillText('アレフガルドに再び光が戻った！', this.canvas.width / 2, 230);
+        this.ctx.fillText('勇者の伝説は 永遠に語り継がれるだろう...', this.canvas.width / 2, 270);
 
         this.ctx.fillStyle = '#00ffcc';
-        this.ctx.font = '14px monospace';
+        this.ctx.font = '15px monospace';
         const blink = Math.floor(Date.now() / 400) % 2 === 0;
         if (blink) {
-            this.ctx.fillText('▶ 画面をタップ / クリック で最初からやり直す', this.canvas.width / 2, 260);
+            this.ctx.fillText('▶ 画面をタップして最初からやり直す', this.canvas.width / 2, 420);
         }
 
         this.ctx.fillStyle = '#aaaaaa';
         this.ctx.font = '12px monospace';
-        this.ctx.fillText('（キーボードの [Enter] または [Aボタン] でも可能）', this.canvas.width / 2, 290);
+        this.ctx.fillText('（[Aボタン] でも可能）', this.canvas.width / 2, 460);
     }
 
     renderMap() {
         const tw = gfx.tileSize;
-        // カメラの中心をプレイヤーに合わせる
+        // カメラの中心をプレイヤーに合わせる（縦長640px画面全体に広大描画）
         const centerX = Math.floor(this.canvas.width / 2 - tw / 2);
         const centerY = Math.floor(this.canvas.height / 2 - tw / 2);
         const offsetX = centerX - this.player.x * tw;
@@ -666,7 +661,7 @@ class Game {
             }
         }
 
-        // プレイヤー描画 (常に中央付近)
+        // プレイヤー描画 (常に中央)
         gfx.drawCharacter(this.ctx, 'hero', this.player.dir, this.player.walkFrame, centerX, centerY);
     }
 
@@ -687,9 +682,9 @@ class Game {
 
     renderDialogWindow() {
         const w = this.canvas.width - 24;
-        const h = 104;
+        const h = 120;
         const x = 12;
-        const y = this.canvas.height - h - 12;
+        const y = this.canvas.height - h - 14;
         gfx.drawWindow(this.ctx, x, y, w, h);
 
         this.ctx.fillStyle = '#ffcc00';
@@ -724,7 +719,7 @@ class Game {
         }
 
         const startY = y + 48;
-        const lineHeight = 20;
+        const lineHeight = 22;
         lines.forEach((line, idx) => {
             this.ctx.fillText(line, x + 16, startY + idx * lineHeight);
         });
@@ -733,7 +728,7 @@ class Game {
         const blink = Math.floor(Date.now() / 300) % 2 === 0;
         if (blink) {
             this.ctx.fillStyle = '#00ffcc';
-            this.ctx.fillText('▼', x + w - 24, y + h - 14);
+            this.ctx.fillText('▼', x + w - 24, y + h - 16);
         }
     }
 
@@ -749,17 +744,17 @@ class Game {
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
-        // 1. モンスター描画 (背景レイヤー)
+        // 1. モンスター描画 (背景レイヤー・縦長画面の中央上部に配置)
         if (b.enemy && b.enemyHp > 0) {
             const monsterSizes = {
-                slime:    { size: 60,  x: 250, y: 130 },
-                dracky:   { size: 210, x: 200, y: 76 },
-                skeleton: { size: 110, x: 226, y: 46 },
-                wizard:   { size: 150, x: 216, y: 44 },
-                golem:    { size: 260, x: 175, y: 55 },
-                dragon:   { size: 280, x: 165, y: 50 }
+                slime:    { size: 90,  x: 245, y: 220 },
+                dracky:   { size: 240, x: 200, y: 140 },
+                skeleton: { size: 140, x: 230, y: 110 },
+                wizard:   { size: 180, x: 215, y: 100 },
+                golem:    { size: 300, x: 165, y: 90 },
+                dragon:   { size: 320, x: 155, y: 80 }
             };
-            const cfg = monsterSizes[b.enemy.id] || { size: 140, x: 225, y: 25 };
+            const cfg = monsterSizes[b.enemy.id] || { size: 160, x: 220, y: 120 };
 
             if (!b.enemyFlash) {
                 gfx.drawMonster(this.ctx, b.enemy.sprite, cfg.x, cfg.y, cfg.size);
@@ -767,23 +762,23 @@ class Game {
         }
 
         // 2. ステータスウィンドウ (最前面レイヤー：左上)
-        gfx.drawWindow(this.ctx, 16, 16, 120, 105);
+        gfx.drawWindow(this.ctx, 16, 20, 130, 115);
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 13px monospace';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(this.player.name, 28, 36);
-        this.ctx.fillText(`LV : ${this.player.level}`, 28, 56);
-        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 28, 76);
-        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 28, 96);
-        this.ctx.fillText(`草 : ${this.player.herbs}こ`, 28, 114);
+        this.ctx.fillText(this.player.name, 28, 42);
+        this.ctx.fillText(`LV : ${this.player.level}`, 28, 64);
+        this.ctx.fillText(`HP : ${this.player.hp}/${this.player.maxHp}`, 28, 86);
+        this.ctx.fillText(`MP : ${this.player.mp}/${this.player.maxMp}`, 28, 106);
+        this.ctx.fillText(`草 : ${this.player.herbs}こ`, 28, 124);
 
         // 3. コマンドウィンドウ (最前面レイヤー：左下)
-        gfx.drawWindow(this.ctx, 16, 140, 140, 90);
+        gfx.drawWindow(this.ctx, 16, 160, 145, 95);
         const commands = [
-            { label: 'たたかう', x: 38, y: 168 }, // 0: 左上
-            { label: 'にげる',   x: 95, y: 168 }, // 1: 右上
-            { label: 'じゅもん', x: 38, y: 198 }, // 2: 左下
-            { label: 'どうぐ',   x: 95, y: 198 }  // 3: 右下
+            { label: 'たたかう', x: 38, y: 188 }, // 0: 左上
+            { label: 'にげる',   x: 95, y: 188 }, // 1: 右上
+            { label: 'じゅもん', x: 38, y: 220 }, // 2: 左下
+            { label: 'どうぐ',   x: 95, y: 220 }  // 3: 右下
         ];
 
         this.ctx.fillStyle = '#ffffff';
@@ -800,22 +795,22 @@ class Game {
 
         // 呪文選択ウィンドウ (開いている場合)
         if (b.phase === 'SPELL_SELECT') {
-            gfx.drawWindow(this.ctx, 165, 140, 140, 90);
+            gfx.drawWindow(this.ctx, 175, 160, 145, 95);
             this.player.spells.forEach((sp, idx) => {
                 this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillText(sp, 195, 168 + idx * 22);
+                this.ctx.fillText(sp, 205, 188 + idx * 22);
             });
-            this.ctx.fillText('▶', 180, 168 + b.spellIndex * 22);
+            this.ctx.fillText('▶', 190, 188 + b.spellIndex * 22);
         }
 
-        // メッセージウィンドウ (下部)
-        const msgH = 95;
-        const msgY = this.canvas.height - msgH - 12;
+        // メッセージウィンドウ (下部にゆったり配置)
+        const msgH = 130;
+        const msgY = this.canvas.height - msgH - 16;
         gfx.drawWindow(this.ctx, 16, msgY, this.canvas.width - 32, msgH);
 
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '14px monospace';
-        this.ctx.fillText(b.currentMessage, 32, msgY + 35);
+        this.ctx.fillText(b.currentMessage, 32, msgY + 38);
 
         // バトル送りマーク
         if (b.currentMessage && b.phase !== 'COMMAND' && b.phase !== 'SPELL_SELECT') {
