@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.6';
+        this.version = 'Ver 2.0.7';
         this.noEncounter = false;
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         
@@ -733,7 +733,7 @@ class Game {
                 const screenY = offsetY + y * tw;
                 if (screenX >= -tw && screenX <= this.canvas.width && screenY >= -tw && screenY <= this.canvas.height) {
                     const tileType = this.currentMap.data[y][x];
-                    gfx.drawTile(this.ctx, tileType, screenX, screenY);
+                    gfx.drawTile(this.ctx, tileType, screenX, screenY, this.currentMap.id);
                 }
             }
         }

@@ -80,12 +80,21 @@ class GraphicsEngine {
             npc2:   ['#000000', '#2d882d', '#44b844', '#ffcca3', '#ffffff', '#633812', '#96551b', '#ffcc00'],
             oldman: ['#000000', '#737380', '#a2a2b0', '#ffffff', '#ffcca3', '#524035', '#7a6050', '#885522'],
             mapDragon: ['#000000', '#166e2c', '#229e41', '#38cc5e', '#ffcc00', '#ff2222', '#ffffff', '#0f471d'],
-            desert: ['#000000', '#d4aa6a', '#e6c28a', '#f5dba8', '#b88a4a']
+            desert: ['#000000', '#d4aa6a', '#e6c28a', '#f5dba8', '#b88a4a'],
+            // --- メルキド (town2) 専用パレット: 砂漠サンドストーン ---
+            melkidWall: ['#000000', '#5e482d', '#856942', '#ad8d5d', '#3d2e1b'],
+            melkidFloor: ['#000000', '#544636', '#756450', '#9c8871', '#382f23'],
+            // --- 竜王の城 (dungeon3) 専用パレット: 暗黒の魔城 ---
+            ryuohWall:   ['#000000', '#1c1524', '#2e223b', '#47365c', '#110c17'],
+            ryuohFloor:  ['#000000', '#241d2e', '#392f47', '#544669', '#16111c'],
+            ryuohCarpet: ['#000000', '#420000', '#730d0d', '#a31717', '#380a30', '#240000'],
+            ryuohThrone: ['#000000', '#4a0808', '#781212', '#a81d1d', '#e62e2e', '#222222'],
+            ryuohIcon:   ['#000000', '#6b0f0f', '#a81919', '#2d253b', '#4d4063', '#e62e2e', '#ff2222', '#140f1a']
         };
         this.PAL = PAL;
     }
 
-    getTilePattern(tileType) {
+    getTilePattern(tileType, mapId = 'default') {
         switch (tileType) {
             case TILE.DESERT: // 砂漠
                 return {
@@ -202,9 +211,9 @@ class GraphicsEngine {
                     ]
                 };
 
-            case TILE.CASTLE_WALL: // 城壁
+            case TILE.CASTLE_WALL: // 城壁 (ラダトーム: 白亜 / 竜王の城: 漆黒闇紫)
                 return {
-                    pal: this.PAL.cWall,
+                    pal: (mapId === 'dungeon3') ? this.PAL.ryuohWall : this.PAL.cWall,
                     data: [
                         "2333321233332123",
                         "3333331333333133",
@@ -225,9 +234,9 @@ class GraphicsEngine {
                     ]
                 };
 
-            case TILE.CASTLE_FLOOR: // 城床 (白・グレーの高級大理石石畳)
+            case TILE.CASTLE_FLOOR: // 城床 (ラダトーム: 白大理石 / 竜王の城: 闇紫魔界床)
                 return {
-                    pal: this.PAL.cFloor,
+                    pal: (mapId === 'dungeon3') ? this.PAL.ryuohFloor : this.PAL.cFloor,
                     data: [
                         "2222222422222224",
                         "2333332423333324",
@@ -248,9 +257,9 @@ class GraphicsEngine {
                     ]
                 };
 
-            case TILE.CARPET: // 豪華な真紅の赤絨毯 (金縁の装飾)
+            case TILE.CARPET: // 絨毯 (ラダトーム: 王室深紅 / 竜王の城: 血染めダーククリムゾン)
                 return {
-                    pal: this.PAL.carpet,
+                    pal: (mapId === 'dungeon3') ? this.PAL.ryuohCarpet : this.PAL.carpet,
                     data: [
                         "4444444444444444",
                         "4223222322232224",
@@ -271,9 +280,9 @@ class GraphicsEngine {
                     ]
                 };
 
-            case TILE.TOWN_WALL: // 宿屋・町の壁 (重厚なダークウッド)
+            case TILE.TOWN_WALL: // 町の壁 (マイラ: ブラウンウッド / メルキド: 砂漠サンドストーン)
                 return {
-                    pal: this.PAL.tWall,
+                    pal: (mapId === 'town2') ? this.PAL.melkidWall : this.PAL.tWall,
                     data: [
                         "2333321233332123",
                         "3333331333333133",
@@ -294,9 +303,9 @@ class GraphicsEngine {
                     ]
                 };
 
-            case TILE.TOWN_FLOOR: // 宿屋・町の床 (明るい木目フローリング)
+            case TILE.TOWN_FLOOR: // 町の床 (マイラ: 木目フロア / メルキド: オアシス石畳)
                 return {
-                    pal: this.PAL.tFloor,
+                    pal: (mapId === 'town2') ? this.PAL.melkidFloor : this.PAL.tFloor,
                     data: [
                         "2333333333333331",
                         "2222222222222221",
@@ -342,7 +351,7 @@ class GraphicsEngine {
 
             case TILE.BRICK:
                 return {
-                    pal: this.PAL.tWall,
+                    pal: (mapId === 'town2') ? this.PAL.melkidWall : this.PAL.tWall,
                     data: [
                         "2333212333212333",
                         "3333313333313333",
@@ -435,7 +444,7 @@ class GraphicsEngine {
 
             case TILE.THRONE:
                 return {
-                    pal: this.PAL.throne,
+                    pal: (mapId === 'dungeon3') ? this.PAL.ryuohThrone : this.PAL.throne,
                     data: [
                         "....00111100....",
                         "...0122222210...",
@@ -571,9 +580,9 @@ class GraphicsEngine {
                     ]
                 };
 
-            case TILE.CASTLE_ICON: // フィールドお城アイコン (壮麗な白亜の城・青屋根)
+            case TILE.CASTLE_ICON: // フィールドお城アイコン (ラダトーム: 白亜・青屋根 / 竜王城: 黒紫・紅蓮眼)
                 return {
-                    pal: this.PAL.castleIcon,
+                    pal: (mapId === 'field2') ? this.PAL.ryuohIcon : this.PAL.castleIcon,
                     data: [
                         "...020....020...",
                         "..02220..02220..",
@@ -622,10 +631,10 @@ class GraphicsEngine {
         }
     }
 
-    drawTile(ctx, tileType, x, y) {
-        const key = `tile_${tileType}`;
+    drawTile(ctx, tileType, x, y, mapId = 'default') {
+        const key = `tile_${tileType}_${mapId}`;
         if (!this.cache[key]) {
-            const pat = this.getTilePattern(tileType);
+            const pat = this.getTilePattern(tileType, mapId);
             if (pat) {
                 this.cache[key] = this.buildPattern(pat.pal, pat.data, 2);
             }
