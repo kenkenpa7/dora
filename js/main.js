@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.4';
+        this.version = 'Ver 2.0.5';
         this.noEncounter = false;
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         
@@ -990,54 +990,72 @@ function toggleDebugModal() {
 function debugSetChapter(chapter) {
     if (!window.game) return;
     const g = window.game;
+
+    // 戦闘中からのワープ時にも安全に戦闘状態を完全リセット
+    if (g.battle) {
+        g.battle.clearTimers();
+        g.battle.active = false;
+        g.battle.phase = 'START';
+        g.battle.messageQueue = [];
+        g.battle.currentMessage = '';
+        g.battle.fullTextMessage = '';
+        g.battle.currentMessageItem = null;
+    }
     
     if (chapter === 1) {
+        const lv1 = LEVEL_TABLE.find(l => l.level === 1) || LEVEL_TABLE[0];
         g.player.level = 1;
         g.player.exp = 0;
-        g.player.hp = 20; g.player.maxHp = 20;
-        g.player.mp = 0; g.player.maxMp = 0;
-        g.player.attack = 8; g.player.defense = 4; g.player.agility = 5;
+        g.player.hp = lv1.maxHp; g.player.maxHp = lv1.maxHp;
+        g.player.mp = lv1.maxMp; g.player.maxMp = lv1.maxMp;
+        g.player.attack = lv1.attack; g.player.defense = lv1.defense; g.player.agility = lv1.agility;
         g.player.gold = 60;
         g.player.equipment = { weapon: 'ひのきのぼう', shield: null };
         g.player.items = { 'やくそう': 2, 'まほうのせいすい': 0, 'せかいじゅのは': 0 };
-        g.player.spells = [];
-        g.flags = { boss1_cleared: false, boss2_cleared: false, ending_reached: false, silver_key: false, rainbow_drop: false };
+        g.player.herbs = 2;
+        g.player.spells = [...lv1.spells];
+        g.flags = { boss1_cleared: false, boss2_cleared: false, boss3_cleared: false };
         g.currentMap = MAPS.castle;
         g.player.x = 6; g.player.y = 2; g.player.dir = 'up';
     } else if (chapter === 2) {
         // 第2章：砂漠（LV5、銅の剣、皮の盾、銀の鍵所持）
+        const lv5 = LEVEL_TABLE.find(l => l.level === 5);
         g.player.level = 5;
-        g.player.exp = LEVEL_TABLE[5].exp;
-        g.player.hp = LEVEL_TABLE[5].hp; g.player.maxHp = LEVEL_TABLE[5].hp;
-        g.player.mp = LEVEL_TABLE[5].mp; g.player.maxMp = LEVEL_TABLE[5].mp;
-        g.player.attack = LEVEL_TABLE[5].attack;
-        g.player.defense = LEVEL_TABLE[5].defense;
-        g.player.agility = LEVEL_TABLE[5].agility;
+        g.player.exp = lv5.exp;
+        g.player.hp = lv5.maxHp; g.player.maxHp = lv5.maxHp;
+        g.player.mp = lv5.maxMp; g.player.maxMp = lv5.maxMp;
+        g.player.attack = lv5.attack;
+        g.player.defense = lv5.defense;
+        g.player.agility = lv5.agility;
         g.player.gold = 500;
         g.player.equipment = { weapon: 'どうのつるぎ', shield: 'かわのたて' };
         g.player.items = { 'やくそう': 5, 'まほうのせいすい': 2, 'せかいじゅのは': 0 };
-        g.player.spells = ['ホイミ', 'ギラ', 'ラリホー', 'ベホイミ'];
-        g.flags = { boss1_cleared: true, boss2_cleared: false, ending_reached: false, silver_key: true, rainbow_drop: false };
+        g.player.herbs = 5;
+        g.player.spells = [...lv5.spells];
+        g.flags = { boss1_cleared: true, boss2_cleared: false, boss3_cleared: false };
         g.currentMap = MAPS.field2;
         g.player.x = 8; g.player.y = 10; g.player.dir = 'down';
     } else if (chapter === 3) {
         // 第3章：竜王城（LV8、鋼の剣、鉄の盾、虹の雫所持）
+        const lv8 = LEVEL_TABLE.find(l => l.level === 8);
         g.player.level = 8;
-        g.player.exp = LEVEL_TABLE[8].exp;
-        g.player.hp = LEVEL_TABLE[8].hp; g.player.maxHp = LEVEL_TABLE[8].hp;
-        g.player.mp = LEVEL_TABLE[8].mp; g.player.maxMp = LEVEL_TABLE[8].mp;
-        g.player.attack = LEVEL_TABLE[8].attack;
-        g.player.defense = LEVEL_TABLE[8].defense;
-        g.player.agility = LEVEL_TABLE[8].agility;
+        g.player.exp = lv8.exp;
+        g.player.hp = lv8.maxHp; g.player.maxHp = lv8.maxHp;
+        g.player.mp = lv8.maxMp; g.player.maxMp = lv8.maxMp;
+        g.player.attack = lv8.attack;
+        g.player.defense = lv8.defense;
+        g.player.agility = lv8.agility;
         g.player.gold = 1500;
         g.player.equipment = { weapon: 'はがねのつるぎ', shield: 'てつのたて' };
         g.player.items = { 'やくそう': 9, 'まほうのせいすい': 5, 'せかいじゅのは': 1 };
-        g.player.spells = ['ホイミ', 'ギラ', 'ラリホー', 'ベホイミ', 'ベギラマ', 'ベホマ'];
-        g.flags = { boss1_cleared: true, boss2_cleared: true, ending_reached: false, silver_key: true, rainbow_drop: true };
+        g.player.herbs = 9;
+        g.player.spells = [...lv8.spells];
+        g.flags = { boss1_cleared: true, boss2_cleared: true, boss3_cleared: false };
         g.currentMap = MAPS.dungeon3;
         g.player.x = 7; g.player.y = 12; g.player.dir = 'up';
     }
     
+    g.safeSteps = 5;
     g.state = 'EXPLORE';
     audio.playBGM(g.currentMap.bgm);
     toggleDebugModal();
@@ -1065,6 +1083,7 @@ function debugAddItems() {
         p.items['やくそう'] = 9;
         p.items['まほうのせいすい'] = 9;
         p.items['せかいじゅのは'] = 1;
+        p.herbs = 9;
         audio.playLevelUp();
     }
 }
@@ -1074,7 +1093,7 @@ function debugToggleEncounter() {
         window.game.noEncounter = !window.game.noEncounter;
         const btn = document.getElementById('btnEncounterToggle');
         if (btn) {
-            btn.textContent = window.game.noEncounter ? '🚫 敵: OFF' : '🚫 敵: ON';
+            btn.textContent = window.game.noEncounter ? '🚫 敵出現: OFF' : '⚔️ 敵出現: ON';
             btn.style.color = window.game.noEncounter ? '#ff4444' : '#ffffff';
         }
     }
