@@ -6,7 +6,11 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.8';
+        this.version = 'Ver 2.0.9';
+        this.SAVE_SCHEMA_VERSION = 1; // 破壊的アップデート時の安全リセット用スキーマバージョン
+        this.titleMenuIndex = 0;      // タイトルメニュー (0: ぼうけんをつづける, 1: さいしょからはじめる)
+        this.openedChests = [];       // 開封済み宝箱 [{ mapId, x, y }]
+        this.saveNotification = null; // セーブ通知表示用 { text, time }
         this.noEncounter = false;
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         
@@ -77,6 +81,125 @@ class Game {
         requestAnimationFrame(this.gameLoop);
     }
 
+    // --- セーブ ＆ ロード管理 (安全強制リセット機構付き) ---
+    saveGame() {
+        const saveData = {
+            schemaVersion: this.SAVE_SCHEMA_VERSION,
+            savedAt: Date.now(),
+            gameVersion: this.version,
+            player: {
+                name: this.player.name,
+                x: this.player.x,
+                y: this.player.y,
+                dir: this.player.dir,
+                level: this.player.level,
+                exp: this.player.exp,
+                hp: this.player.hp,
+                maxHp: this.player.maxHp,
+                mp: this.player.mp,
+                maxMp: this.player.maxMp,
+                attack: this.player.attack,
+                defense: this.player.defense,
+                agility: this.player.agility,
+                gold: this.player.gold,
+                equipment: { ...this.player.equipment },
+                items: { ...this.player.items },
+                spells: [...this.player.spells]
+            },
+            flags: { ...this.flags },
+            currentMapId: this.currentMap.id,
+            openedChests: [...this.openedChests]
+        };
+
+        try {
+            localStorage.setItem('dora_save_data', JSON.stringify(saveData));
+            return true;
+        } catch (e) {
+            console.error('セーブデータの保存に失敗しました:', e);
+            return false;
+        }
+    }
+
+    loadSaveData() {
+        try {
+            const raw = localStorage.getItem('dora_save_data');
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+
+            // スキーマバージョンの厳格検証 (破壊的変更時の安全強制リセット)
+            if (!data || data.schemaVersion !== this.SAVE_SCHEMA_VERSION) {
+                console.warn('⚠️ セーブデータが旧バージョンまたは互換性がないため、安全のためにリセットしました。');
+                localStorage.removeItem('dora_save_data');
+                return null;
+            }
+            return data;
+        } catch (e) {
+            console.error('⚠️ セーブデータの破損を検知したため安全にリセットしました:', e);
+            localStorage.removeItem('dora_save_data');
+            return null;
+        }
+    }
+
+    continueGame() {
+        const data = this.loadSaveData();
+        if (!data) {
+            this.startGame();
+            return;
+        }
+        audio.playSelect();
+        this.applySaveData(data);
+    }
+
+    applySaveData(data) {
+        if (!data || !data.player) return;
+
+        // プレイヤー情報復元
+        Object.assign(this.player, data.player);
+
+        // フラグ復元
+        Object.assign(this.flags, data.flags || {});
+
+        // 開封済み宝箱復元
+        this.openedChests = data.openedChests || [];
+        this.openedChests.forEach(c => {
+            if (MAPS[c.mapId] && MAPS[c.mapId].data[c.y]) {
+                MAPS[c.mapId].data[c.y][c.x] = TILE.CHEST_OPEN;
+            }
+        });
+
+        // マップ復元
+        const mapId = data.currentMapId || 'castle';
+        this.currentMap = MAPS[mapId] || MAPS.castle;
+
+        this.state = 'EXPLORE';
+        audio.playBGM(this.currentMap.bgm);
+        this.showSaveNotification(`冒険を再開した！ (LV ${this.player.level} / ${this.player.gold}G)`);
+    }
+
+    quickSave() {
+        if (this.state !== 'EXPLORE') {
+            audio.playCancel();
+            this.showSaveNotification('いまは セーブできません！');
+            return;
+        }
+
+        const success = this.saveGame();
+        if (success) {
+            audio.playLevelUp(); // ドラクエ風セーブファンファーレ音
+            this.showSaveNotification(`冒険の書に 記録しました！ (LV ${this.player.level})`);
+        } else {
+            audio.playCancel();
+            this.showSaveNotification('セーブに 失敗しました！');
+        }
+    }
+
+    showSaveNotification(msg) {
+        this.saveNotification = {
+            text: msg,
+            time: Date.now() + 2400
+        };
+    }
+
     // ボスが撃破済みかどうか判定
     isNpcActive(npc) {
         if (!npc) return false;
@@ -126,10 +249,25 @@ class Game {
         bindBtn('btnA', 'Enter');
         bindBtn('btnB', 'Escape');
 
-        this.canvas.addEventListener('click', () => {
+        this.canvas.addEventListener('click', (e) => {
             audio.init();
             if (this.state === 'TITLE') {
-                this.startGame();
+                const saveData = this.loadSaveData();
+                if (saveData && saveData.player) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const scaleY = this.canvas.height / rect.height;
+                    const clickY = (e.clientY - rect.top) * scaleY;
+                    if (clickY >= 445) {
+                        // さいしょからはじめる
+                        audio.playSelect();
+                        this.startGame();
+                    } else {
+                        // ぼうけんをつづける
+                        this.continueGame();
+                    }
+                } else {
+                    this.startGame();
+                }
             } else if (this.state === 'TALK') {
                 audio.playCursor();
                 this.advanceDialog();
@@ -174,8 +312,26 @@ class Game {
         audio.init();
 
         if (this.state === 'TITLE') {
-            if (['Enter', ' ', 'z', 'Z'].includes(key)) {
-                this.startGame();
+            const saveData = this.loadSaveData();
+            if (saveData && saveData.player) {
+                if (['ArrowUp', 'w', 'W', 'ArrowLeft', 'a', 'A'].includes(key)) {
+                    audio.playCursor();
+                    this.titleMenuIndex = 0; // つづきから
+                } else if (['ArrowDown', 's', 'S', 'ArrowRight', 'd', 'D'].includes(key)) {
+                    audio.playCursor();
+                    this.titleMenuIndex = 1; // はじめから
+                } else if (['Enter', ' ', 'z', 'Z'].includes(key)) {
+                    if (this.titleMenuIndex === 0) {
+                        this.continueGame();
+                    } else {
+                        audio.playSelect();
+                        this.startGame();
+                    }
+                }
+            } else {
+                if (['Enter', ' ', 'z', 'Z'].includes(key)) {
+                    this.startGame();
+                }
             }
             return;
         }
@@ -307,6 +463,19 @@ class Game {
                     },
                     { text: 'おはようございます！ HPと MPが ぜんかいふく した！ またどうぞ！' }
                 ];
+            } else if (npc.id === 'king') {
+                const baseDialog = npc.dialog || ['そなたの旅に 光あれ！'];
+                this.dialogQueue = baseDialog.map(t => ({ text: t }));
+                this.dialogQueue.push({
+                    text: 'これまでの 旅の記録を 冒険の書に 書き残しましたぞ！',
+                    action: () => {
+                        this.saveGame();
+                        audio.playLevelUp();
+                    }
+                });
+                this.dialogQueue.push({
+                    text: '決して 無理をせず、気をつけて 進むが良い！'
+                });
             } else if (npc.reqFlag) {
                 if (this.flags[npc.reqFlag]) {
                     this.dialogQueue = (npc.passDialog || npc.dialog).map(t => ({ text: t }));
@@ -333,6 +502,7 @@ class Game {
                 if (tile === TILE.CHEST) {
                     audio.playLevelUp();
                     this.currentMap.data[pos.y][pos.x] = TILE.CHEST_OPEN;
+                    this.openedChests.push({ mapId: this.currentMap.id, x: pos.x, y: pos.y });
 
                     const chestData = (this.currentMap.chests || []).find(c => c.x === pos.x && c.y === pos.y);
                     this.state = 'TALK';
@@ -658,6 +828,18 @@ class Game {
             this.ctx.fillStyle = `rgba(0, 0, 0, ${this.innFade})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
+
+        // セーブ等の通知メッセージ表示 (画面上部中央)
+        if (this.saveNotification && Date.now() < this.saveNotification.time) {
+            const nw = 360;
+            const nh = 46;
+            const nx = (this.canvas.width - nw) / 2;
+            gfx.drawWindow(this.ctx, nx, 18, nw, nh);
+            this.ctx.fillStyle = '#ffcc00';
+            this.ctx.font = 'bold 14px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(this.saveNotification.text, this.canvas.width / 2, 46);
+        }
     }
 
     renderTitle() {
@@ -678,16 +860,42 @@ class Game {
 
         gfx.drawMonster(this.ctx, 'slime', this.canvas.width / 2 - 45, 230 - jumpHeight, 90);
 
-        const blink = Math.floor(Date.now() / 400) % 2 === 0;
-        if (blink) {
-            this.ctx.fillStyle = '#00ffcc';
-            this.ctx.font = 'bold 18px monospace';
-            this.ctx.fillText('PRESS A / START', this.canvas.width / 2, 430);
-        }
+        const saveData = this.loadSaveData();
+        if (saveData && saveData.player) {
+            // セーブデータ選択ウィンドウ
+            gfx.drawWindow(this.ctx, 95, 380, 290, 110);
+            this.ctx.font = 'bold 16px monospace';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillText('ぼうけんをつづける', 150, 422);
+            this.ctx.fillText('さいしょからはじめる', 150, 464);
 
-        this.ctx.fillStyle = '#8888aa';
-        this.ctx.font = '13px monospace';
-        this.ctx.fillText('画面タップ または Aボタンで冒険開始', this.canvas.width / 2, 470);
+            // カーソル
+            const cursorY = (this.titleMenuIndex === 0) ? 422 : 464;
+            this.ctx.fillStyle = '#ffcc00';
+            this.ctx.fillText('▶', 122, cursorY);
+
+            // セーブサマリー情報
+            this.ctx.fillStyle = '#ffea78';
+            this.ctx.font = '13px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`【冒険の書】 LV ${saveData.player.level} / ${saveData.player.gold} G`, this.canvas.width / 2, 515);
+
+            this.ctx.fillStyle = '#8888aa';
+            this.ctx.font = '12px monospace';
+            this.ctx.fillText('↑↓で選択 して Aボタン または 画面タップ', this.canvas.width / 2, 545);
+        } else {
+            const blink = Math.floor(Date.now() / 400) % 2 === 0;
+            if (blink) {
+                this.ctx.fillStyle = '#00ffcc';
+                this.ctx.font = 'bold 18px monospace';
+                this.ctx.fillText('PRESS A / START', this.canvas.width / 2, 430);
+            }
+
+            this.ctx.fillStyle = '#8888aa';
+            this.ctx.font = '13px monospace';
+            this.ctx.fillText('画面タップ または Aボタンで冒険開始', this.canvas.width / 2, 470);
+        }
     }
 
     renderEnding() {
@@ -1113,5 +1321,11 @@ function debugToggleEncounter() {
             btn.textContent = window.game.noEncounter ? '🚫 敵出現: OFF' : '⚔️ 敵出現: ON';
             btn.style.color = window.game.noEncounter ? '#ff4444' : '#ffffff';
         }
+    }
+}
+
+function quickSave() {
+    if (window.game) {
+        window.game.quickSave();
     }
 }
