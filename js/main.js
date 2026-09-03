@@ -6,7 +6,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
 
-        this.version = 'Ver 2.0.7';
+        this.version = 'Ver 2.0.8';
         this.noEncounter = false;
         this.state = 'TITLE'; // 'TITLE', 'EXPLORE', 'TALK', 'SHOP', 'BATTLE', 'ENDING'
         
@@ -873,6 +873,10 @@ class Game {
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+        // 戦闘フィールド背景描画 (マップごとの専用背景)
+        const currentMapId = this.currentMap ? this.currentMap.id : 'field';
+        gfx.drawBattleBackground(this.ctx, currentMapId, this.canvas.width, this.canvas.height);
+
         if (b.flashScreen) {
             this.ctx.fillStyle = b.flashColor;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -897,6 +901,19 @@ class Game {
                 dragon_boss:     { size: 350, x: 140, y: 65 }
             };
             const cfg = monsterSizes[b.enemy.id] || { size: 160, x: 220, y: 120 };
+
+            // モンスター足元シャドウ (接地感・浮遊感のリアル演出)
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            this.ctx.beginPath();
+            const shadowX = cfg.x + cfg.size / 2;
+            const isDracky = b.enemy.id.startsWith('dracky');
+            const shadowY = isDracky ? 300 : (cfg.y + cfg.size - 6);
+            const shadowRadiusX = isDracky ? 48 : (cfg.size * 0.36);
+            const shadowRadiusY = isDracky ? 10 : (cfg.size * 0.1);
+            this.ctx.ellipse(shadowX, shadowY, shadowRadiusX, shadowRadiusY, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.restore();
 
             if (!b.enemyFlash) {
                 gfx.drawMonster(this.ctx, b.enemy.id, cfg.x, cfg.y, cfg.size);

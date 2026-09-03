@@ -647,6 +647,285 @@ class GraphicsEngine {
         }
     }
 
+    // --- 戦闘シーン専用・プログラミング背景描画エンジン ---
+    drawBattleBackground(ctx, mapId, width, height) {
+        ctx.save();
+
+        const horizonY = 195; // 地平線の高さ
+
+        if (mapId === 'field2') {
+            // =========================
+            // 🏜️ 砂漠バトル背景 (第2章フィールド)
+            // =========================
+            // 1. 空 (灼熱の黄昏・オレンジグラデーション)
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+            skyGrad.addColorStop(0, '#782d0e');
+            skyGrad.addColorStop(0.5, '#ba5718');
+            skyGrad.addColorStop(1, '#e39846');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, width, horizonY);
+
+            // 太陽の照り返し
+            ctx.fillStyle = 'rgba(255, 230, 180, 0.25)';
+            ctx.beginPath();
+            ctx.arc(320, 90, 45, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. 遠景の砂丘シルエット
+            ctx.fillStyle = '#9e5a22';
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY);
+            ctx.quadraticCurveTo(120, horizonY - 45, 240, horizonY - 15);
+            ctx.quadraticCurveTo(360, horizonY + 5, width, horizonY - 35);
+            ctx.lineTo(width, horizonY);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#b8702c';
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY);
+            ctx.quadraticCurveTo(80, horizonY - 18, 180, horizonY - 30);
+            ctx.quadraticCurveTo(300, horizonY - 40, width, horizonY - 10);
+            ctx.lineTo(width, horizonY);
+            ctx.closePath();
+            ctx.fill();
+
+            // 3. 砂漠の大地 (サンドゴールドのグラデーション)
+            const groundGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+            groundGrad.addColorStop(0, '#c78f40');
+            groundGrad.addColorStop(0.4, '#ba7f32');
+            groundGrad.addColorStop(1, '#945f21');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, horizonY, width, height - horizonY);
+
+            // 砂紋 (風紋のレトロドット横縞)
+            ctx.fillStyle = 'rgba(92, 53, 14, 0.25)';
+            for (let y = horizonY + 12; y < height; y += 14) {
+                const waveOffset = Math.sin(y * 0.25) * 18;
+                const thickness = Math.floor((y - horizonY) / 45) + 1;
+                ctx.fillRect(20 + waveOffset, y, width - 40, thickness);
+            }
+            // ハイライト砂紋
+            ctx.fillStyle = 'rgba(255, 220, 150, 0.2)';
+            for (let y = horizonY + 18; y < height; y += 14) {
+                const waveOffset = Math.cos(y * 0.25) * 18;
+                ctx.fillRect(30 + waveOffset, y, width - 60, 1);
+            }
+
+        } else if (mapId === 'dungeon' || mapId === 'dungeon2') {
+            // =========================
+            // 🪨 洞窟・迷宮バトル背景
+            // =========================
+            const isFire = (mapId === 'dungeon2'); // 火山の迷宮判定
+
+            // 1. 暗闇の岩肌壁
+            const wallGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+            wallGrad.addColorStop(0, '#0a0812');
+            wallGrad.addColorStop(1, isFire ? '#241010' : '#181622');
+            ctx.fillStyle = wallGrad;
+            ctx.fillRect(0, 0, width, horizonY);
+
+            // ゴツゴツした石壁ブロック
+            ctx.fillStyle = isFire ? '#361818' : '#282436';
+            for (let y = 10; y < horizonY; y += 28) {
+                const shift = ((y / 28) % 2) * 35;
+                for (let x = -20; x < width + 20; x += 70) {
+                    ctx.fillRect(x + shift + 2, y + 2, 66, 24);
+                }
+            }
+            // 鍾乳石 / 垂れ壁の影
+            ctx.fillStyle = '#0a0812';
+            for (let i = 0; i < 8; i++) {
+                const sx = i * 65 + 10;
+                const sl = 25 + (i % 3) * 18;
+                ctx.beginPath();
+                ctx.moveTo(sx, 0);
+                ctx.lineTo(sx + 20, 0);
+                ctx.lineTo(sx + 10, sl);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 松明の炎の明かり (左右)
+            const torchPositions = [50, width - 50];
+            torchPositions.forEach(tx => {
+                // 壁掛け燭台
+                ctx.fillStyle = '#594433';
+                ctx.fillRect(tx - 3, horizonY - 75, 6, 20);
+                // 炎の光輪
+                const lightGrad = ctx.createRadialGradient(tx, horizonY - 80, 5, tx, horizonY - 80, 45);
+                lightGrad.addColorStop(0, isFire ? 'rgba(255, 120, 40, 0.65)' : 'rgba(255, 180, 50, 0.55)');
+                lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = lightGrad;
+                ctx.beginPath();
+                ctx.arc(tx, horizonY - 80, 45, 0, Math.PI * 2);
+                ctx.fill();
+                // 芯
+                ctx.fillStyle = '#ffeedd';
+                ctx.fillRect(tx - 2, horizonY - 82, 4, 6);
+            });
+
+            // 2. 地面 (冷たい洞窟石畳 / 溶岩フロア)
+            const groundGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+            groundGrad.addColorStop(0, isFire ? '#2b1414' : '#201d26');
+            groundGrad.addColorStop(1, isFire ? '#4a1515' : '#14121a');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, horizonY, width, height - horizonY);
+
+            // 石畳の目地ライン
+            ctx.strokeStyle = isFire ? 'rgba(255, 80, 30, 0.28)' : 'rgba(10, 8, 16, 0.65)';
+            ctx.lineWidth = 2;
+            for (let y = horizonY + 16; y < height; y += 22) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+        } else if (mapId === 'dungeon3') {
+            // =========================
+            // 🏰 竜王の魔城バトル背景 (第3章)
+            // =========================
+            // 1. 漆黒と深紫の魔界の闇
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+            skyGrad.addColorStop(0, '#08020e');
+            skyGrad.addColorStop(0.6, '#180a29');
+            skyGrad.addColorStop(1, '#2c0f3d');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, width, horizonY);
+
+            // 禍々しい魔界の月・赤い邪眼光
+            const moonGrad = ctx.createRadialGradient(width / 2, 85, 8, width / 2, 85, 75);
+            moonGrad.addColorStop(0, 'rgba(255, 30, 30, 0.45)');
+            moonGrad.addColorStop(0.5, 'rgba(140, 15, 60, 0.25)');
+            moonGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = moonGrad;
+            ctx.beginPath();
+            ctx.arc(width / 2, 85, 75, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 左右の黒曜石の巨大城柱
+            const colWidth = 48;
+            [12, width - colWidth - 12].forEach(cx => {
+                // 柱本体
+                ctx.fillStyle = '#1c152b';
+                ctx.fillRect(cx, 0, colWidth, horizonY);
+                // 柱ハイライト
+                ctx.fillStyle = '#392957';
+                ctx.fillRect(cx + 6, 0, 8, horizonY);
+                // 柱の溝
+                ctx.fillStyle = '#0d0817';
+                ctx.fillRect(cx + 20, 0, 6, horizonY);
+                ctx.fillRect(cx + 34, 0, 6, horizonY);
+                // 柱頭装飾
+                ctx.fillStyle = '#611631';
+                ctx.fillRect(cx - 4, 18, colWidth + 8, 8);
+                ctx.fillRect(cx - 2, horizonY - 26, colWidth + 4, 8);
+            });
+
+            // 2. 地面 (紫灰色の魔界大理石 ＋ 中央の血の真紅カーペット)
+            const groundGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+            groundGrad.addColorStop(0, '#1c1726');
+            groundGrad.addColorStop(1, '#0e0b14');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, horizonY, width, height - horizonY);
+
+            // 中央の血染め真紅カーペット (遠近パース)
+            ctx.fillStyle = '#660808';
+            ctx.beginPath();
+            ctx.moveTo(width / 2 - 45, horizonY);
+            ctx.lineTo(width / 2 + 45, horizonY);
+            ctx.lineTo(width / 2 + 130, height);
+            ctx.lineTo(width / 2 - 130, height);
+            ctx.closePath();
+            ctx.fill();
+
+            // カーペットの金・黒縁取り
+            ctx.strokeStyle = '#380614';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(width / 2 - 45, horizonY);
+            ctx.lineTo(width / 2 - 130, height);
+            ctx.moveTo(width / 2 + 45, horizonY);
+            ctx.lineTo(width / 2 + 130, height);
+            ctx.stroke();
+
+        } else {
+            // =========================
+            // 🌲 草原バトル背景 (デフォルト / 第1章フィールド)
+            // =========================
+            // 1. 青空 (爽快な空色グラデーション)
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+            skyGrad.addColorStop(0, '#2e66b8');
+            skyGrad.addColorStop(0.65, '#5c97d6');
+            skyGrad.addColorStop(1, '#9bc5eb');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, width, horizonY);
+
+            // 白いドット雲
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+            // 雲1
+            ctx.fillRect(60, 45, 80, 14);
+            ctx.fillRect(75, 36, 50, 10);
+            ctx.fillRect(95, 28, 25, 8);
+            // 雲2
+            ctx.fillRect(280, 70, 110, 16);
+            ctx.fillRect(305, 58, 65, 12);
+
+            // 2. 遠景の緑の山並み
+            // 奥の山 (淡い青緑)
+            ctx.fillStyle = '#417a66';
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY);
+            ctx.lineTo(70, horizonY - 45);
+            ctx.lineTo(160, horizonY - 15);
+            ctx.lineTo(260, horizonY - 55);
+            ctx.lineTo(370, horizonY - 20);
+            ctx.lineTo(width, horizonY - 40);
+            ctx.lineTo(width, horizonY);
+            ctx.closePath();
+            ctx.fill();
+
+            // 手前の山 (深い緑)
+            ctx.fillStyle = '#2f6336';
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY);
+            ctx.lineTo(110, horizonY - 32);
+            ctx.lineTo(200, horizonY - 8);
+            ctx.lineTo(310, horizonY - 38);
+            ctx.lineTo(width, horizonY - 12);
+            ctx.lineTo(width, horizonY);
+            ctx.closePath();
+            ctx.fill();
+
+            // 3. 草原の大地 (みずみずしいグリーングラデーション)
+            const groundGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+            groundGrad.addColorStop(0, '#3f8c35');
+            groundGrad.addColorStop(0.35, '#4aa63e');
+            groundGrad.addColorStop(1, '#337a2b');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, horizonY, width, height - horizonY);
+
+            // 草原のレトロドット芝生テクスチャ
+            ctx.fillStyle = 'rgba(28, 74, 22, 0.35)';
+            for (let y = horizonY + 8; y < height; y += 12) {
+                const step = (Math.floor(y / 12) % 2) * 14;
+                for (let x = 10 + step; x < width - 10; x += 28) {
+                    ctx.fillRect(x, y, 6, 2);
+                }
+            }
+            ctx.fillStyle = 'rgba(128, 224, 110, 0.3)';
+            for (let y = horizonY + 14; y < height; y += 12) {
+                const step = ((Math.floor(y / 12) + 1) % 2) * 14;
+                for (let x = 16 + step; x < width - 10; x += 28) {
+                    ctx.fillRect(x, y, 4, 2);
+                }
+            }
+        }
+
+        ctx.restore();
+    }
+
     getCharacterPattern(type, dir, walkFrame) {
         // 勇者
         if (type === 'hero') {
